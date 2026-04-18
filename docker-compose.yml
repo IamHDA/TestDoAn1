@@ -4,34 +4,59 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: backend
-    restart: always
+    container_name: qa-backend
+    restart: no
     ports:
-      - "8081:8081"
+      - "${SERVER_PORT:-8081}:8081"
+    env_file:
+      - .env
     environment:
       - FILE_PATH=/app/data/files
-      - URL_DOWNLOAD_FILE=http://139.162.31.27/api/files/download/
+      - URL_DOWNLOAD_FILE=${URL_DOWNLOAD_FILE:-http://localhost:8081/api/files/download/}
       - TZ=Asia/Ho_Chi_Minh
       - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=DoAn2025PTIT
-      - DB_URL=jdbc:mysql://139.162.31.27:3306/class_system_demo
-      - DB_USER=root
-      - DB_PASSWORD=adminptit
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DB_URL=jdbc:mysql://mysql:3306/${DB_NAME:-class_system}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD}
     volumes:
       - /home/ubuntu/uploads:/app/data/files
       - /home/ubuntu/logs:/app/logs
     depends_on:
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  mysql:
+    image: mysql:8.0
+    container_name: qa-mysql-db
+    restart: no
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME:-class_system}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - class-system:/var/lib/mysql
+
   redis:
     image: redis:7-alpine
-    container_name: redis-cache
-    restart: always
+    container_name: qa-redis-cache
+    restart: no
     ports:
       - "6379:6379"
     command: >
       redis-server
-      --requirepass DoAn2025PTIT
+      --requirepass ${REDIS_PASSWORD}
       --appendonly yes
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
@@ -41,17 +66,18 @@ services:
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: redis-commander
-    restart: always
+    container_name: qa-redis-commander
+    restart: no
     ports:
       - "8082:8081"
     environment:
-      - REDIS_HOSTS=local:redis:6379:0:DoAn2025PTIT
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=DoAn2025PTIT
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
+      - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-admin}
       - TZ=Asia/Ho_Chi_Minh
     depends_on:
       - redis
 
 volumes:
   redis-data:
+  class-system:
