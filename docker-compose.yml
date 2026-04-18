@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - FILE_PATH=/app/data/files
+      - URL_DOWNLOAD_FILE=http://139.162.31.27/api/files/download/
+      - TZ=Asia/Ho_Chi_Minh
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=DoAn2025PTIT
+      - DB_URL=jdbc:mysql://139.162.31.27:3306/class_system_demo
+      - DB_USER=root
+      - DB_PASSWORD=adminptit
+    volumes:
+      - /home/ubuntu/uploads:/app/data/files
+      - /home/ubuntu/logs:/app/logs
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass DoAn2025PTIT
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --notify-keyspace-events "Ex"
+    volumes:
+      - redis-data:/data
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    restart: always
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:DoAn2025PTIT
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=DoAn2025PTIT
+      - TZ=Asia/Ho_Chi_Minh
+    depends_on:
+      - redis
+
+volumes:
+  redis-data:

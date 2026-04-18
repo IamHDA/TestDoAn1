@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test Report</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            color: #333333;
+        }
+        .report-header {
+            border-bottom: 2px solid #333333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .report-header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            color: #000000;
+        }
+        .report-header p {
+            font-size: 11px;
+            color: #666666;
+            margin: 5px 0 0 0;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000;
+            border-bottom: 1px solid #cccccc;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+        table th {
+            background-color: #e6e6e6;
+            border: 1px solid #cccccc;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+            color: #000000;
+        }
+        table td {
+            border: 1px solid #cccccc;
+            padding: 8px;
+            background-color: #ffffff;
+        }
+        table tr:nth-child(even) td {
+            background-color: #f9f9f9;
+        }
+        .metric-table {
+            margin-top: 10px;
+        }
+        .metric-table th {
+            width: 150px;
+        }
+        .endpoint-section {
+            margin-bottom: 25px;
+            border: 1px solid #cccccc;
+            padding: 15px;
+            background-color: #fafafa;
+        }
+        .endpoint-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #dddddd;
+        }
+        .metric-label {
+            font-weight: bold;
+            color: #333333;
+        }
+        .value-success {
+            color: #006600;
+        }
+        .value-error {
+            color: #cc0000;
+        }
+        .value-number {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .error-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .error-item {
+            font-size: 10px;
+            color: #666666;
+            margin: 3px 0;
+        }
+        .summary-table {
+            width: auto;
+        }
+        .summary-table td:first-child {
+            font-weight: bold;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>Performance Test Report</h1>
+        <p>Live Exam Feature - Session 44 | Generated: 2026-01-09 10:13:09</p>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Test Summary</div>
+        <table class="summary-table">
+            <tr>
+                <td>Total Users</td>
+                <td class="value-number">300</td>
+            </tr>
+            <tr>
+                <td>Test Duration</td>
+                <td class="value-number">18.15 seconds</td>
+            </tr>
+            <tr>
+                <td>Successful Flows</td>
+                <td class="value-number value-success">300</td>
+            </tr>
+            <tr>
+                <td>Failed Flows</td>
+                <td class="value-number value-error">0</td>
+            </tr>
+            <tr>
+                <td>Success Rate</td>
+                <td class="value-number">100.00%</td>
+            </tr>
+            <tr>
+                <td>Throughput (users/s)</td>
+                <td class="value-number">16.53</td>
+            </tr>
+            <tr>
+                <td>Total Requests</td>
+                <td class="value-number">1500</td>
+            </tr>
+            <tr>
+                <td>Total Failures</td>
+                <td class="value-number value-error">0</td>
+            </tr>
+            <tr>
+                <td>Error Rate</td>
+                <td class="value-number value-error">0.00%</td>
+            </tr>
+            <tr>
+                <td>Throughput (RPS)</td>
+                <td class="value-number">82.65</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Test Configuration</div>
+        <table class="summary-table">
+            <tr>
+                <td>Base URL</td>
+                <td>http://139.162.31.27:8081</td>
+            </tr>
+            <tr>
+                <td>Session Exam ID</td>
+                <td>44</td>
+            </tr>
+            <tr>
+                <td>Test Start</td>
+                <td>2026-01-09T10:12:51.000486</td>
+            </tr>
+            <tr>
+                <td>Test End</td>
+                <td>2026-01-09T10:13:09.150381</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">API Endpoint Statistics</div>
+        
+        <div class="endpoint-section">
+            <div class="endpoint-title">POST /api/auth/login</div>
+            
+            <table class="metric-table">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Total Requests</td>
+                    <td class="value-number">300</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Success</td>
+                    <td class="value-number value-success">300 (100.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Failures</td>
+                    <td class="value-number value-error">0 (0.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Throughput</td>
+                    <td class="value-number">16.53 req/s</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Response Time Statistics (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Average</td>
+                    <td class="value-number">4845.14</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Min</td>
+                    <td class="value-number">447.05</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Max</td>
+                    <td class="value-number">9634.39</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Median</td>
+                    <td class="value-number">4655.70</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Std Deviation</td>
+                    <td class="value-number">2571.39</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Percentiles (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">P50</td>
+                    <td class="value-number">4681.40</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P90</td>
+                    <td class="value-number">8466.84</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P95</td>
+                    <td class="value-number">9059.95</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P99</td>
+                    <td class="value-number">9556.41</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="endpoint-section">
+            <div class="endpoint-title">POST /api/session-exams/44/join</div>
+            
+            <table class="metric-table">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Total Requests</td>
+                    <td class="value-number">300</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Success</td>
+                    <td class="value-number value-success">300 (100.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Failures</td>
+                    <td class="value-number value-error">0 (0.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Throughput</td>
+                    <td class="value-number">16.53 req/s</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Response Time Statistics (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Average</td>
+                    <td class="value-number">4616.03</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Min</td>
+                    <td class="value-number">240.36</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Max</td>
+                    <td class="value-number">9065.78</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Median</td>
+                    <td class="value-number">4468.70</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Std Deviation</td>
+                    <td class="value-number">1862.48</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Percentiles (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">P50</td>
+                    <td class="value-number">4489.41</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P90</td>
+                    <td class="value-number">7179.82</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P95</td>
+                    <td class="value-number">7819.97</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P99</td>
+                    <td class="value-number">8423.43</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="endpoint-section">
+            <div class="endpoint-title">GET /api/session-exams/44/download</div>
+            
+            <table class="metric-table">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Total Requests</td>
+                    <td class="value-number">300</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Success</td>
+                    <td class="value-number value-success">300 (100.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Failures</td>
+                    <td class="value-number value-error">0 (0.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Throughput</td>
+                    <td class="value-number">16.53 req/s</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Response Time Statistics (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Average</td>
+                    <td class="value-number">2881.06</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Min</td>
+                    <td class="value-number">772.05</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Max</td>
+                    <td class="value-number">6820.48</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Median</td>
+                    <td class="value-number">2702.93</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Std Deviation</td>
+                    <td class="value-number">1072.70</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Percentiles (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">P50</td>
+                    <td class="value-number">2702.98</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P90</td>
+                    <td class="value-number">4247.78</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P95</td>
+                    <td class="value-number">4638.34</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P99</td>
+                    <td class="value-number">6780.63</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="endpoint-section">
+            <div class="endpoint-title">POST /api/session-exams/44/save</div>
+            
+            <table class="metric-table">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Total Requests</td>
+                    <td class="value-number">300</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Success</td>
+                    <td class="value-number value-success">300 (100.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Failures</td>
+                    <td class="value-number value-error">0 (0.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Throughput</td>
+                    <td class="value-number">16.53 req/s</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Response Time Statistics (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Average</td>
+                    <td class="value-number">2468.74</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Min</td>
+                    <td class="value-number">559.68</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Max</td>
+                    <td class="value-number">5304.55</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Median</td>
+                    <td class="value-number">2446.60</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Std Deviation</td>
+                    <td class="value-number">826.59</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Percentiles (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">P50</td>
+                    <td class="value-number">2450.04</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P90</td>
+                    <td class="value-number">3499.98</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P95</td>
+                    <td class="value-number">3909.38</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P99</td>
+                    <td class="value-number">4880.03</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="endpoint-section">
+            <div class="endpoint-title">POST /api/session-exams/44/submit</div>
+            
+            <table class="metric-table">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Total Requests</td>
+                    <td class="value-number">300</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Success</td>
+                    <td class="value-number value-success">300 (100.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Failures</td>
+                    <td class="value-number value-error">0 (0.00%)</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Throughput</td>
+                    <td class="value-number">16.53 req/s</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Response Time Statistics (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">Average</td>
+                    <td class="value-number">1767.78</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Min</td>
+                    <td class="value-number">115.51</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Max</td>
+                    <td class="value-number">4693.09</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Median</td>
+                    <td class="value-number">1697.62</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">Std Deviation</td>
+                    <td class="value-number">936.95</td>
+                </tr>
+            </table>
+            
+            <table class="metric-table">
+                <tr>
+                    <th colspan="2">Percentiles (ms)</th>
+                </tr>
+                <tr>
+                    <td class="metric-label">P50</td>
+                    <td class="value-number">1700.19</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P90</td>
+                    <td class="value-number">2997.95</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P95</td>
+                    <td class="value-number">3563.53</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">P99</td>
+                    <td class="value-number">4139.96</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
