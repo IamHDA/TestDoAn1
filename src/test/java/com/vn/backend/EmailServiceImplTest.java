@@ -5,6 +5,7 @@ import com.vn.backend.entities.Classroom;
 import com.vn.backend.entities.SessionExam;
 import com.vn.backend.entities.User;
 import com.vn.backend.services.impl.EmailServiceImpl;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -99,6 +100,17 @@ class EmailServiceImplTest {
         verify(mailSender).send(mimeMessage);
     }
 
+    @Test
+    @DisplayName("sendExamEmail - xử lý khi ném MessagingException")
+    void sendExamEmail_CatchMessagingException() throws MessagingException {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        // Mocking the overloaded setSubject(String, String) method used by MimeMessageHelper
+        doThrow(new MessagingException("Simulated Messaging Error")).when(mimeMessage).setSubject(anyString(), anyString());
+        
+        emailService.sendExamEmail(sessionExam, student, "http://localhost:3000");
+        verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+
     // ===================== sendAssignmentCreatedEmail =====================
 
     @Test
@@ -115,6 +127,34 @@ class EmailServiceImplTest {
         verify(mailSender, times(2)).send(mimeMessage);
     }
 
+    @Test
+    @DisplayName("sendAssignmentCreatedEmail - trường hợp danh sách sinh viên rỗng")
+    void sendAssignmentCreatedEmail_EmptyList() {
+        emailService.sendAssignmentCreatedEmail(assignment, List.of(), "http://localhost:3000");
+        verify(mailSender, never()).createMimeMessage();
+    }
+
+    @Test
+    @DisplayName("sendAssignmentCreatedEmail - trường hợp classroom và dueDate bị null")
+    void sendAssignmentCreatedEmail_NullFields() {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        assignment.setClassroom(null);
+        assignment.setDueDate(null);
+
+        emailService.sendAssignmentCreatedEmail(assignment, List.of(student), "http://localhost:3000");
+        verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    @DisplayName("sendAssignmentCreatedEmail - xử lý khi ném MessagingException")
+    void sendAssignmentCreatedEmail_CatchMessagingException() throws MessagingException {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new MessagingException("Error")).when(mimeMessage).setSubject(anyString(), anyString());
+
+        emailService.sendAssignmentCreatedEmail(assignment, List.of(student), "http://localhost:3000");
+        verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+
     // ===================== sendReminderEmail =====================
 
     @Test
@@ -127,6 +167,16 @@ class EmailServiceImplTest {
         verify(mailSender).send(mimeMessage);
     }
 
+    @Test
+    @DisplayName("sendReminderEmail - xử lý khi ném MessagingException")
+    void sendReminderEmail_CatchMessagingException() throws MessagingException {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new MessagingException("Reminder failed")).when(mimeMessage).setSubject(anyString(), anyString());
+
+        emailService.sendReminderEmail(student, assignment, 2, "http://localhost:3000");
+        verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+
     // ===================== sendExamReminderEmail =====================
 
     @Test
@@ -137,5 +187,43 @@ class EmailServiceImplTest {
         emailService.sendExamReminderEmail(student, sessionExam, 3, "http://localhost:3000");
 
         verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    @DisplayName("sendReminderEmail - trường hợp classroom bị null và quá hạn 1 ngày")
+    void sendReminderEmail_OneDayOverdue_NullClassroom() {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        assignment.setClassroom(null);
+
+        emailService.sendReminderEmail(student, assignment, 1, "http://localhost:3000");
+        verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    @DisplayName("sendReminderEmail - trường hợp quá hạn >= 3 ngày (màu đỏ)")
+    void sendReminderEmail_MultipleDaysOverdue() {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        emailService.sendReminderEmail(student, assignment, 3, "http://localhost:3000");
+        verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    @DisplayName("sendExamReminderEmail - trường hợp classroom bị null và quá hạn 1 ngày")
+    void sendExamReminderEmail_OneDayOverdue_NullClassroom() {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        sessionExam.setClassroom(null);
+
+        emailService.sendExamReminderEmail(student, sessionExam, 1, "http://localhost:3000");
+        verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    @DisplayName("sendExamReminderEmail - trường hợp quá hạn >= 3 ngày")
+    void sendExamReminderEmail_MultipleDays_Exception() throws MessagingException {
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new MessagingException("Failed")).when(mimeMessage).setSubject(anyString(), anyString());
+
+        emailService.sendExamReminderEmail(student, sessionExam, 5, "http://localhost:3000");
+        verify(mailSender, never()).send(any(MimeMessage.class));
     }
 }

@@ -34,6 +34,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("QuestionServiceImpl Unit Tests - 35 Complete Test Cases")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class QuestionServiceImplTest {
 
     @Mock private QuestionRepository questionRepository;
@@ -64,8 +65,8 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_Q_01: Tạo câu hỏi thành công (Single Choice)")
-    void test_TC_Q_01_CreateQuestion_Success_SingleChoice() {
+    @DisplayName("TC_QLT_01: Tạo câu hỏi thành công (Single Choice)")
+    void test_TC_QLT_01_CreateQuestion_Success_SingleChoice() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -86,8 +87,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_02: Tạo câu hỏi Multiple Choice hợp lệ")
-    void test_TC_Q_02_CreateQuestion_Success_MultiChoice() {
+    @DisplayName("TC_QLT_02: Tạo câu hỏi Multiple Choice hợp lệ")
+    void test_TC_QLT_02_CreateQuestion_Success_MultiChoice() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -106,8 +107,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_03: Tạo câu hỏi thất bại do Topic không tồn tại")
-    void test_TC_Q_03_CreateQuestion_Fail_TopicNotFound() {
+    @DisplayName("TC_QLT_03: Tạo câu hỏi thất bại do Topic không tồn tại")
+    void test_TC_QLT_03_CreateQuestion_Fail_TopicNotFound() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(99L)).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
@@ -121,8 +122,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_04: Tạo câu hỏi thất bại do Topic bị vô hiệu hóa")
-    void test_TC_Q_04_CreateQuestion_Fail_TopicInactive() {
+    @DisplayName("TC_QLT_04: Tạo câu hỏi thất bại do Topic bị vô hiệu hóa")
+    void test_TC_QLT_04_CreateQuestion_Fail_TopicInactive() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.empty()); // inactive will return empty here
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
@@ -135,8 +136,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_05: Tạo câu hỏi thất bại do không có đáp án")
-    void test_TC_Q_05_CreateQuestion_Fail_EmptyAnswers() {
+    @DisplayName("TC_QLT_05: Tạo câu hỏi thất bại do không có đáp án")
+    void test_TC_QLT_05_CreateQuestion_Fail_EmptyAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -150,8 +151,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_06: Tạo câu hỏi thất bại do thiếu đáp án ĐÚNG")
-    void test_TC_Q_06_CreateQuestion_Fail_NoCorrectAnswer() {
+    @DisplayName("TC_QLT_06: Tạo câu hỏi thất bại do thiếu đáp án ĐÚNG")
+    void test_TC_QLT_06_CreateQuestion_Fail_NoCorrectAnswer() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -165,8 +166,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_07: Bẫy Single Choice có quá 1 đáp án đúng")
-    void test_TC_Q_07_CreateQuestion_Fail_SingleChoiceMultiCorrect() {
+    @DisplayName("TC_QLT_07: Bẫy Single Choice có quá 1 đáp án đúng")
+    void test_TC_QLT_07_CreateQuestion_Fail_SingleChoiceMultiCorrect() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -181,8 +182,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_08: Bẫy Single Choice nhưng có dưới 2 lựa chọn")
-    void test_TC_Q_08_CreateQuestion_Fail_SingleChoiceOnlyOneOption() {
+    @DisplayName("TC_QLT_08: Bẫy Single Choice nhưng có dưới 2 lựa chọn")
+    void test_TC_QLT_08_CreateQuestion_Fail_SingleChoiceOnlyOneOption() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -197,8 +198,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_09: Tạo hàng loạt thành công")
-    void test_TC_Q_09_BulkCreate_Success() {
+    @DisplayName("TC_QLT_09: Tạo hàng loạt thành công")
+    void test_TC_QLT_09_BulkCreate_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -216,8 +217,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_10: Phá vỡ chuỗi do một phần tử con gặp lỗi")
-    void test_TC_Q_10_BulkCreate_Fail_OneItemMissingAnswers() {
+    @DisplayName("TC_QLT_10: Phá vỡ chuỗi do một phần tử con gặp lỗi")
+    void test_TC_QLT_10_BulkCreate_Fail_OneItemMissingAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
         
@@ -240,8 +241,8 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_Q_11: Xem chi tiết câu hỏi thành công")
-    void test_TC_Q_11_GetDetail_Success() {
+    @DisplayName("TC_QLT_11: Xem chi tiết câu hỏi thành công")
+    void test_TC_QLT_11_GetDetail_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
@@ -256,8 +257,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_12: Xem chi tiết tự động ẩn đáp án đã xóa")
-    void test_TC_Q_12_GetDetail_HidesDeletedAnswers() {
+    @DisplayName("TC_QLT_12: Xem chi tiết tự động ẩn đáp án đã xóa")
+    void test_TC_QLT_12_GetDetail_HidesDeletedAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
@@ -273,8 +274,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_13: Ngăn chặn truy cập thẻ đã bị thu hồi")
-    void test_TC_Q_13_GetDetail_Fail_SoftDeleted() {
+    @DisplayName("TC_QLT_13: Ngăn chặn truy cập thẻ đã bị thu hồi")
+    void test_TC_QLT_13_GetDetail_Fail_SoftDeleted() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
@@ -285,8 +286,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_14: Tìm kiếm quyền Quản trị viên (Admin Layer)")
-    void test_TC_Q_14_Search_Admin() {
+    @DisplayName("TC_QLT_14: Tìm kiếm quyền Quản trị viên (Admin Layer)")
+    void test_TC_QLT_14_Search_Admin() {
         when(authService.getCurrentUser()).thenReturn(adminUser);
         BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
         
@@ -301,8 +302,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_15: Tìm kiếm quyền Giáo viên (Teacher Layer)")
-    void test_TC_Q_15_Search_Teacher() {
+    @DisplayName("TC_QLT_15: Tìm kiếm quyền Giáo viên (Teacher Layer)")
+    void test_TC_QLT_15_Search_Teacher() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
         
@@ -317,8 +318,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_16: Tìm kiếm qua Bộ Lọc Đa Luồng (Filters)")
-    void test_TC_Q_16_Search_Teacher_MultiFilter() {
+    @DisplayName("TC_QLT_16: Tìm kiếm qua Bộ Lọc Đa Luồng (Filters)")
+    void test_TC_QLT_16_Search_Teacher_MultiFilter() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
         req.getFilters().setType(QuestionType.MULTI_CHOICE);
@@ -341,8 +342,8 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_Q_17: Cập nhật thông tin cơ bản thành công")
-    void test_TC_Q_17_Update_Success() {
+    @DisplayName("TC_QLT_17: Cập nhật thông tin cơ bản thành công")
+    void test_TC_QLT_17_Update_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).content("Old").createdBy(1L).build();
         
@@ -361,8 +362,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_18: Cập nhật linh hoạt một phần (Partial Update)")
-    void test_TC_Q_18_Update_Success_Partial() {
+    @DisplayName("TC_QLT_18: Cập nhật linh hoạt một phần (Partial Update)")
+    void test_TC_QLT_18_Update_Success_Partial() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).content("Keep Me").createdBy(1L).build();
         
@@ -379,8 +380,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_19: API không xâm phạm sửa chữa đáp án")
-    void test_TC_Q_19_Update_DoesNotModifyAnswers() {
+    @DisplayName("TC_QLT_19: API không xâm phạm sửa chữa đáp án")
+    void test_TC_QLT_19_Update_DoesNotModifyAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).build();
         
@@ -395,8 +396,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_20: Tự động gỡ cờ duyệt 'Bài Ôn Tập'")
-    void test_TC_Q_20_Update_ResetsReviewStatus() {
+    @DisplayName("TC_QLT_20: Tự động gỡ cờ duyệt 'Bài Ôn Tập'")
+    void test_TC_QLT_20_Update_ResetsReviewStatus() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).isReviewQuestion(true).build(); // TRUE
         
@@ -412,8 +413,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_21: Bẫy Bảo mật - Người dùng sai Role thao tác")
-    void test_TC_Q_21_Update_Fail_NotTeacher() {
+    @DisplayName("TC_QLT_21: Bẫy Bảo mật - Người dùng sai Role thao tác")
+    void test_TC_QLT_21_Update_Fail_NotTeacher() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         
         assertThatThrownBy(() -> questionService.updateQuestion(100L, new QuestionUpdateRequest()))
@@ -422,8 +423,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_22: Bẫy IDOR - Sửa chéo câu hỏi")
-    void test_TC_Q_22_Update_Fail_NotOwner() {
+    @DisplayName("TC_QLT_22: Bẫy IDOR - Sửa chéo câu hỏi")
+    void test_TC_QLT_22_Update_Fail_NotOwner() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         // Returns empty meaning the question doesn't belong to them or is deleted
         when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.empty());
@@ -435,8 +436,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_23: Xóa mềm (Soft Delete) thành công")
-    void test_TC_Q_23_SoftDelete_Success() {
+    @DisplayName("TC_QLT_23: Xóa mềm (Soft Delete) thành công")
+    void test_TC_QLT_23_SoftDelete_Success() {
         Question q = Question.builder().questionId(100L).isDeleted(false).build();
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
         
@@ -612,8 +613,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_31: Export xuất chính xác số đo cột dư")
-    void test_TC_Q_31_ExportExcel_Success() {
+    @DisplayName("TC_QLT_31: Export xuất chính xác số đo cột dư")
+    void test_TC_QLT_31_ExportExcel_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         
         Question q = Question.builder().questionId(100L).content("Q1").topic(topic).build();
@@ -629,8 +630,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_32: Generate File Template khảm List Chủ Đề Động")
-    void test_TC_Q_32_DownloadTemplate_Success() {
+    @DisplayName("TC_QLT_32: Generate File Template khảm List Chủ Đề Động")
+    void test_TC_QLT_32_DownloadTemplate_Success() {
         List<Object[]> topicsObj = new ArrayList<>();
         topicsObj.add(new Object[]{10L, "Topic1", "Subj1", "SUBJ01"});
         when(topicRepository.listTopicsWithSubject()).thenReturn(topicsObj);
@@ -644,8 +645,8 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_Q_33: Nhóm gửi thông điệp kiểm duyệt thành công")
-    void test_TC_Q_33_CreateApprovalQuestion_Success() {
+    @DisplayName("TC_QLT_33: Nhóm gửi thông điệp kiểm duyệt thành công")
+    void test_TC_QLT_33_CreateApprovalQuestion_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).isDeleted(false).build();
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
@@ -659,8 +660,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_34: Ngăn chặn gửi đi câu hỏi Tàn Tích (Deleted)")
-    void test_TC_Q_34_CreateApprovalQuestion_Fail_Deleted() {
+    @DisplayName("TC_QLT_34: Ngăn chặn gửi đi câu hỏi Tàn Tích (Deleted)")
+    void test_TC_QLT_34_CreateApprovalQuestion_Fail_Deleted() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).isDeleted(true).build(); // Deleted
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
@@ -674,8 +675,8 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_Q_35: Ngăn chặn cướp luồng sở hữu (Cross-teacher IDOR)")
-    void test_TC_Q_35_CreateApprovalQuestion_Fail_IDOR() {
+    @DisplayName("TC_QLT_35: Ngăn chặn cướp luồng sở hữu (Cross-teacher IDOR)")
+    void test_TC_QLT_35_CreateApprovalQuestion_Fail_IDOR() {
         when(authService.getCurrentUser()).thenReturn(teacherUser); // ID = 1
         Question q = Question.builder().questionId(100L).createdBy(99L).isDeleted(false).build(); // Belongs to user 99
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
