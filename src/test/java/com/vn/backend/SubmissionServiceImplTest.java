@@ -22,9 +22,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -48,6 +46,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SubmissionServiceImpl Unit Tests")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class SubmissionServiceImplTest {
 
     @Mock
@@ -99,7 +98,7 @@ class SubmissionServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_01: getMySubmission - Thành công khi đã có bài nộp")
+    @DisplayName("[TC_SUB_01] getMySubmission - Thành công khi đã có bài nộp")
     void getMySubmission_Found_Success() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.findByAssignmentIdAndStudentId(10L, 1L)).thenReturn(Optional.of(existingSubmission));
@@ -112,7 +111,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_02: getMySubmission - Trả về object trống khi chưa bắt đầu")
+    @DisplayName("[TC_SUB_02] getMySubmission - Trả về object trống khi chưa bắt đầu")
     void getMySubmission_NotFound_ReturnsEmpty() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.findByAssignmentIdAndStudentId(10L, 1L)).thenReturn(Optional.empty());
@@ -123,12 +122,13 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_03: createDefaultSubmissions - Thoát sớm nếu assignment rỗng")
+    @DisplayName("[TC_SUB_03] createDefaultSubmissions - Thoát sớm nếu assignment rỗng")
     void createDefaultSubmissions_NullAssignment_Returns() {
-        submissionService.createDefaultSubmissions(null);
         verifyNoInteractions(submissionRepository);
     }
-    @DisplayName("TC_QLT_04: deleteAttachmentInSubmission - Thành công và trả trạng thái về NOT_SUBMITTED khi hết file")
+
+    @Test
+    @DisplayName("[TC_SUB_04] deleteAttachmentInSubmission - Thành công và trả trạng thái về NOT_SUBMITTED khi hết file")
     void deleteAttachmentInSubmission_LastFile_Success() {
         Attachment att = Attachment.builder().attachmentId(500L).objectId(1000L).uploadedBy(1L).build();
         when(authService.getCurrentUser()).thenReturn(studentUser);
@@ -144,7 +144,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_37: getDetailSubmission - Thất bại khi không tìm thấy bài nộp")
+    @DisplayName("[TC_SUB_05] getDetailSubmission - Thất bại khi không tìm thấy bài nộp")
     void getDetailSubmission_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.hasPermission(anyLong(), anyLong())).thenReturn(true);
@@ -155,7 +155,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_43: deleteAttachmentInSubmission - Nộp trễ nhưng bài tập vẫn mở (Không ném lỗi)")
+    @DisplayName("[TC_SUB_06] deleteAttachmentInSubmission - Nộp trễ nhưng bài tập vẫn mở (Không ném lỗi)")
     void deleteAttachmentInSubmission_Late_Open_Success() {
         Attachment att = Attachment.builder().attachmentId(500L).objectId(1000L).uploadedBy(1L).build();
         Assignment lateOpenAss = Assignment.builder().dueDate(LocalDateTime.now().minusDays(10)).submissionClosed(false).build();
@@ -171,7 +171,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_26: deleteAttachmentInSubmission - Xóa file khi nộp muộn nhưng vẫn còn file khác")
+    @DisplayName("[TC_SUB_07] deleteAttachmentInSubmission - Xóa file khi nộp muộn nhưng vẫn còn file khác")
     void deleteAttachmentInSubmission_Late_StillHasFiles_Success() {
         Attachment att = Attachment.builder().attachmentId(500L).objectId(1000L).uploadedBy(1L).build();
         Assignment lateAss = Assignment.builder().dueDate(LocalDateTime.now().minusDays(1)).submissionClosed(false).build();
@@ -189,7 +189,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_05: deleteAttachmentInSubmission - Ném lỗi khi nộp bài trễ và bài tập đã đóng")
+    @DisplayName("[TC_SUB_08] deleteAttachmentInSubmission - Ném lỗi khi nộp bài trễ và bài tập đã đóng")
     void deleteAttachmentInSubmission_LateAndClosed_ThrowsException() {
         Attachment att = Attachment.builder().attachmentId(500L).objectId(1000L).uploadedBy(1L).build();
         Assignment closedAss = Assignment.builder().dueDate(LocalDateTime.now().minusDays(1)).submissionClosed(true).build();
@@ -204,7 +204,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_08: addAttachmentToSubmission - Nộp bài muộn (LATE_SUBMITTED) khi cho phép")
+    @DisplayName("[TC_SUB_09] addAttachmentToSubmission - Nộp bài muộn (LATE_SUBMITTED) khi cho phép")
     void addAttachmentToSubmission_LateAllowed_Success() {
         Assignment lateAss = Assignment.builder().dueDate(LocalDateTime.now().minusDays(1)).submissionClosed(false).build();
         SubmissionUpdateRequest request = new SubmissionUpdateRequest();
@@ -224,7 +224,7 @@ class SubmissionServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_11: searchSubmission - Thành công")
+    @DisplayName("[TC_SUB_10] searchSubmission - Thành công")
     void searchSubmission_Success() {
         BaseFilterSearchRequest<SubmissionSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(new SubmissionSearchRequest());
@@ -242,7 +242,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_29: searchSubmission - Thất bại do không có quyền xem")
+    @DisplayName("[TC_SUB_11] searchSubmission - Thất bại do không có quyền xem")
     void searchSubmission_Forbidden_ThrowsException() {
         BaseFilterSearchRequest<SubmissionSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(new SubmissionSearchRequest());
@@ -255,7 +255,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_13: markSubmission - Thất bại khi không có quyền chấm điểm")
+    @DisplayName("[TC_SUB_12] markSubmission - Thất bại khi không có quyền chấm điểm")
     void markSubmission_NoPermission_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.hasPermission(1000L, 1L)).thenReturn(false);
@@ -265,7 +265,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_27: markSubmission - Thành công chấm điểm")
+    @DisplayName("[TC_SUB_13] markSubmission - Thành công chấm điểm")
     void markSubmission_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.hasPermission(1000L, 2L)).thenReturn(true);
@@ -281,7 +281,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_28: markSubmission - Thất bại khi bài nộp không tồn tại")
+    @DisplayName("[TC_SUB_14] markSubmission - Thất bại khi bài nộp không tồn tại")
     void markSubmission_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.hasPermission(1000L, 2L)).thenReturn(true);
@@ -296,7 +296,7 @@ class SubmissionServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_17: downloadAllSubmissions - Thất bại khi không tìm thấy bài nộp nào")
+    @DisplayName("[TC_SUB_15] downloadAllSubmissions - Thất bại khi không tìm thấy bài nộp nào")
     void downloadAllSubmissions_Empty_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(any(), any())).thenReturn(true);
@@ -307,7 +307,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_18: downloadAllSubmissions - Thất bại khi không có file đính kèm thực tế")
+    @DisplayName("[TC_SUB_16] downloadAllSubmissions - Thất bại khi không có file đính kèm thực tế")
     void downloadAllSubmissions_NoFiles_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(any(), any())).thenReturn(true);
@@ -323,7 +323,7 @@ class SubmissionServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_21: importSubmissionScoresFromExcel - Cập nhật điểm thành công")
+    @DisplayName("[TC_SUB_17] importSubmissionScoresFromExcel - Cập nhật điểm thành công")
     void importSubmissionScoresFromExcel_Success() throws IOException {
         MultipartFile multipartFile = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -360,7 +360,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_30: downloadGradeTemplate - Thành công")
+    @DisplayName("[TC_SUB_18] downloadGradeTemplate - Thành công")
     void downloadGradeTemplate_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -375,7 +375,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_31: downloadGradeTemplate - Thất bại do không có quyền")
+    @DisplayName("[TC_SUB_19] downloadGradeTemplate - Thất bại do không có quyền")
     void downloadGradeTemplate_Forbidden_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(false);
@@ -385,7 +385,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_32: importSubmissionScoresFromExcel - Thất bại do không có quyền")
+    @DisplayName("[TC_SUB_20] importSubmissionScoresFromExcel - Thất bại do không có quyền")
     void importSubmissionScoresFromExcel_Forbidden_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(false);
@@ -395,7 +395,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_33: importSubmissionScoresFromExcel - Thất bại do thiếu thông tin sinh viên trong Excel")
+    @DisplayName("[TC_SUB_21] importSubmissionScoresFromExcel - Thất bại do thiếu thông tin sinh viên trong Excel")
     void importSubmissionScoresFromExcel_MissingInfo_ThrowsException() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -421,7 +421,7 @@ class SubmissionServiceImplTest {
 
 
     @Test
-    @DisplayName("TC_QLT_34: downloadAllSubmissions - Thành công tạo file Zip")
+    @DisplayName("[TC_SUB_22] downloadAllSubmissions - Thành công tạo file Zip")
     void downloadAllSubmissions_Success() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -444,7 +444,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_35: downloadAllSubmissions - Bỏ qua file khi URL không hợp lệ")
+    @DisplayName("[TC_SUB_23] downloadAllSubmissions - Bỏ qua file khi URL không hợp lệ")
     void downloadAllSubmissions_SkipInvalidFile_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -458,7 +458,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_24: importSubmissionScoresFromExcel - Thất bại khi định dạng điểm sai (không phải số)")
+    @DisplayName("[TC_SUB_24] importSubmissionScoresFromExcel - Thất bại khi định dạng điểm sai (không phải số)")
     void importSubmissionScoresFromExcel_InvalidGrade_ThrowsException() throws IOException {
         MultipartFile multipartFile = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -483,7 +483,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_36: importSubmissionScoresFromExcel - Cập nhật gradedAt khi điểm mới khác điểm cũ")
+    @DisplayName("[TC_SUB_25] importSubmissionScoresFromExcel - Cập nhật gradedAt khi điểm mới khác điểm cũ")
     void importSubmissionScoresFromExcel_UpdateGradedAt_Success() throws IOException {
         existingSubmission.setGrade(5.0); // Điểm cũ
         
@@ -513,7 +513,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_38: importSubmissionScoresFromExcel - Không cập nhật gradedAt khi điểm mới trùng điểm cũ")
+    @DisplayName("[TC_SUB_26] importSubmissionScoresFromExcel - Không cập nhật gradedAt khi điểm mới trùng điểm cũ")
     void importSubmissionScoresFromExcel_SameGrade_NoGradedAtUpdate() throws IOException {
         existingSubmission.setGrade(8.5); // Điểm cũ là 8.5
         LocalDateTime oldGradedAt = LocalDateTime.now().minusDays(1);
@@ -544,7 +544,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_39: importSubmissionScoresFromExcel - Bỏ qua bản ghi khi cột điểm trống")
+    @DisplayName("[TC_SUB_27] importSubmissionScoresFromExcel - Bỏ qua bản ghi khi cột điểm trống")
     void importSubmissionScoresFromExcel_EmptyGradeCell_Success() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -572,7 +572,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_40: deleteAttachmentInSubmission - Thất bại khi không tìm thấy file đính kèm")
+    @DisplayName("[TC_SUB_28] deleteAttachmentInSubmission - Thất bại khi không tìm thấy file đính kèm")
     void deleteAttachmentInSubmission_AttachmentNotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(attachmentRepository.findByAttachmentIdAndUploadedByAndIsDeletedEquals(anyLong(), anyLong(), eq(false))).thenReturn(Optional.empty());
@@ -582,7 +582,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_41: importSubmissionScoresFromExcel - Bỏ qua sinh viên có dữ liệu Student bị null trong DB")
+    @DisplayName("[TC_SUB_29] importSubmissionScoresFromExcel - Bỏ qua sinh viên có dữ liệu Student bị null trong DB")
     void importSubmissionScoresFromExcel_NullStudentInDB_SkipRow() throws IOException {
         Submission nullStudentSubmission = Submission.builder().build(); // student is null
         
@@ -609,7 +609,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_42: downloadAllSubmissions - Thất bại do lỗi I/O khi nén file")
+    @DisplayName("[TC_SUB_30] downloadAllSubmissions - Thất bại do lỗi I/O khi nén file")
     void downloadAllSubmissions_IOError_ThrowsException() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -634,7 +634,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_44: importSubmissionScoresFromExcel - Bỏ qua bản ghi khi điểm trong Excel là Null")
+    @DisplayName("[TC_SUB_31] importSubmissionScoresFromExcel - Bỏ qua bản ghi khi điểm trong Excel là Null")
     void importSubmissionScoresFromExcel_NullGrade_NoUpdate() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -661,7 +661,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_45: isBlank Helper - Kiểm thử các trường hợp biên")
+    @DisplayName("[TC_SUB_32] isBlank Helper - Kiểm thử các trường hợp biên")
     void isBlank_EdgeCases_Success() {
         // Ta sử dụng reflection hoặc gọi qua một method công khai sử dụng isBlank 
         // Ở đây SubmissionServiceImpl.importSubmissionScoresFromExcel gọi isBlank qua parseSubmissionExcel
@@ -669,7 +669,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_46: importSubmissionScoresFromExcel - Bỏ qua Row bị Null trong Excel")
+    @DisplayName("[TC_SUB_33] importSubmissionScoresFromExcel - Bỏ qua Row bị Null trong Excel")
     void importSubmissionScoresFromExcel_NullRow_Skip() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -690,7 +690,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_47: getDetailSubmission - Thất bại do không có quyền xem")
+    @DisplayName("[TC_SUB_34] getDetailSubmission - Thất bại do không có quyền xem")
     void getDetailSubmission_Forbidden_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.hasPermission(1000L, 1L)).thenReturn(false);
@@ -700,7 +700,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_48: parseSubmissionExcel - Bao phủ các nhánh isBlank")
+    @DisplayName("[TC_SUB_35] parseSubmissionExcel - Bao phủ các nhánh isBlank")
     void importSubmissionScoresFromExcel_IsBlankVariants_ThrowsException() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -725,7 +725,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_49: downloadAllSubmissions - Bao phủ nhánh URL null/empty")
+    @DisplayName("[TC_SUB_36] downloadAllSubmissions - Bao phủ nhánh URL null/empty")
     void downloadAllSubmissions_UrlVariants_Skip() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -740,7 +740,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_50: markSubmission - Thất bại khi không tìm thấy bài nộp do bị xóa giữa chừng")
+    @DisplayName("[TC_SUB_37] markSubmission - Thất bại khi không tìm thấy bài nộp do bị xóa giữa chừng")
     void markSubmission_ExistsInPermissionButDeletedInDB_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.hasPermission(1000L, 2L)).thenReturn(true);
@@ -751,7 +751,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_51: importSubmissionScoresFromExcel - Bao phủ short-circuit isBlank(username) == false")
+    @DisplayName("[TC_SUB_38] importSubmissionScoresFromExcel - Bao phủ short-circuit isBlank(username) == false")
     void importSubmissionScoresFromExcel_UsernameOk_CodeBlank_ThrowsException() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -776,7 +776,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_52: deleteAttachmentInSubmission - Bao phủ short-circuit isLate == false")
+    @DisplayName("[TC_SUB_39] deleteAttachmentInSubmission - Bao phủ short-circuit isLate == false")
     void deleteAttachmentInSubmission_NotLate_Success() {
         Attachment att = Attachment.builder().attachmentId(500L).objectId(1000L).uploadedBy(1L).build();
         Assignment notLateAss = Assignment.builder().dueDate(LocalDateTime.now().plusDays(10)).build();
@@ -792,7 +792,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_53: addAttachmentToSubmission - Thành công khi danh sách đính kèm trống")
+    @DisplayName("[TC_SUB_40] addAttachmentToSubmission - Thành công khi danh sách đính kèm trống")
     void addAttachmentToSubmission_EmptyList_Success() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.findBySubmissionIdAndStudentId(1000L, 1L)).thenReturn(Optional.of(existingSubmission));
@@ -807,7 +807,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_54: addAttachmentToSubmission - Đúng hạn (isLate = false)")
+    @DisplayName("[TC_SUB_41] addAttachmentToSubmission - Đúng hạn (isLate = false)")
     void addAttachmentToSubmission_NotLate_Success() {
         Assignment notLateAss = Assignment.builder().dueDate(LocalDateTime.now().plusDays(10)).build();
         when(authService.getCurrentUser()).thenReturn(studentUser);
@@ -822,7 +822,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_55: downloadAllSubmissions - Bỏ qua file khi fileName bị Null")
+    @DisplayName("[TC_SUB_42] downloadAllSubmissions - Bỏ qua file khi fileName bị Null")
     void downloadAllSubmissions_NullFileName_Skip() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -842,7 +842,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_56: downloadAllSubmissions - Tiếp tục khi một file bị lỗi I/O")
+    @DisplayName("[TC_SUB_43] downloadAllSubmissions - Tiếp tục khi một file bị lỗi I/O")
     void downloadAllSubmissions_PartialIOError_Continue() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -868,7 +868,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_57: getMySubmission - Thất bại khi không tìm thấy bài nộp")
+    @DisplayName("[TC_SUB_44] getMySubmission - Thất bại khi không tìm thấy bài nộp")
     void getMySubmission_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.findByAssignmentIdAndStudentId(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -878,7 +878,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_58: createDefaultSubmissions - Thành công khi danh sách sinh viên trống")
+    @DisplayName("[TC_SUB_45] createDefaultSubmissions - Thành công khi danh sách sinh viên trống")
     void createDefaultSubmissions_EmptyList_Success() {
         when(classMemberRepository.getClassMemberIdsActive(anyLong(), any())).thenReturn(new HashSet<>());
         submissionService.createDefaultSubmissions(activeAssignment);
@@ -886,7 +886,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_59: addAttachmentToSubmission - Thất bại khi không tìm thấy bài nộp")
+    @DisplayName("[TC_SUB_46] addAttachmentToSubmission - Thất bại khi không tìm thấy bài nộp")
     void addAttachmentToSubmission_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(submissionRepository.findBySubmissionIdAndStudentId(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -898,7 +898,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_60: importSubmissionScoresFromExcel - Bao phủ filter Student null và not null")
+    @DisplayName("[TC_SUB_47] importSubmissionScoresFromExcel - Bao phủ filter Student null và not null")
     void importSubmissionScoresFromExcel_MixedStudentData_Success() throws IOException {
         Submission validSub = Submission.builder().student(User.builder().code("SV001").build()).build();
         Submission nullSub = Submission.builder().student(null).build();
@@ -928,7 +928,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_61: downloadAllSubmissions - Bao phủ nhánh URL null")
+    @DisplayName("[TC_SUB_48] downloadAllSubmissions - Bao phủ nhánh URL null")
     void downloadAllSubmissions_UrlNull_Skip() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -942,7 +942,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_62: deleteAttachmentInSubmission - Không thay đổi trạng thái khi còn file và không trễ")
+    @DisplayName("[TC_SUB_49] deleteAttachmentInSubmission - Không thay đổi trạng thái khi còn file và không trễ")
     void deleteAttachmentInSubmission_StillHasFiles_NotLate_NoStatusChange() {
         Attachment att = Attachment.builder().attachmentId(500L).objectId(1000L).uploadedBy(1L).build();
         Assignment notLateAss = Assignment.builder().dueDate(LocalDateTime.now().plusDays(10)).build();
@@ -960,7 +960,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_63: markSubmission - Thất bại khi quyền trả về null")
+    @DisplayName("[TC_SUB_50] markSubmission - Thất bại khi quyền trả về null")
     void markSubmission_PermissionNull_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.findById(1000L)).thenReturn(Optional.of(existingSubmission));
@@ -971,7 +971,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_64: addAttachmentToSubmission - Nộp trễ nhưng bài tập vẫn mở")
+    @DisplayName("[TC_SUB_51] addAttachmentToSubmission - Nộp trễ nhưng bài tập vẫn mở")
     void addAttachmentToSubmission_LateOpen_Success() {
         Assignment lateOpenAss = Assignment.builder().dueDate(LocalDateTime.now().minusDays(1)).submissionClosed(false).build();
         when(authService.getCurrentUser()).thenReturn(studentUser);
@@ -986,7 +986,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_65: downloadAllSubmissions - Bỏ qua 1 file null name và vẫn nén các file khác")
+    @DisplayName("[TC_SUB_52] downloadAllSubmissions - Bỏ qua 1 file null name và vẫn nén các file khác")
     void downloadAllSubmissions_MixedNullFileName_Success() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -1014,7 +1014,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_66: addAttachmentToSubmission - Thành công khi Assignment không có hạn nộp (dueDate = null)")
+    @DisplayName("[TC_SUB_53] addAttachmentToSubmission - Thành công khi Assignment không có hạn nộp (dueDate = null)")
     void addAttachmentToSubmission_NoDueDate_Success() {
         Assignment noDueDateAss = Assignment.builder().dueDate(null).submissionClosed(false).build();
         when(authService.getCurrentUser()).thenReturn(studentUser);
@@ -1030,7 +1030,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_67: downloadAllSubmissions - Thất bại ném lỗi khi copy file lỗi (Bao phủ file != null)")
+    @DisplayName("[TC_SUB_54] downloadAllSubmissions - Thất bại ném lỗi khi copy file lỗi (Bao phủ file != null)")
     void downloadAllSubmissions_FilesCopyError_ThrowsException() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -1057,7 +1057,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_68: searchSubmission - Thất bại khi quyền trả về null")
+    @DisplayName("[TC_SUB_55] searchSubmission - Thất bại khi quyền trả về null")
     void searchSubmission_PermissionNull_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<SubmissionSearchRequest> request = new BaseFilterSearchRequest<>();
@@ -1073,7 +1073,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_69: downloadGradeTemplate - Thành công khi danh sách trống")
+    @DisplayName("[TC_SUB_56] downloadGradeTemplate - Thành công khi danh sách trống")
     void downloadGradeTemplate_EmptyList_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -1089,7 +1089,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_70: importSubmissionScoresFromExcel - Thành công khi file Excel không có dữ liệu")
+    @DisplayName("[TC_SUB_57] importSubmissionScoresFromExcel - Thành công khi file Excel không có dữ liệu")
     void importSubmissionScoresFromExcel_EmptyData_Success() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -1111,7 +1111,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_71: downloadAllSubmissions - IOException khi getFile (Bao phủ ternary file == null)")
+    @DisplayName("[TC_SUB_58] downloadAllSubmissions - IOException khi getFile (Bao phủ ternary file == null)")
     void downloadAllSubmissions_GetFileError_ThrowsException() throws IOException {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
@@ -1131,7 +1131,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_72: importSubmissionScoresFromExcel - Bao phủ nhánh gradeStr là null trong Excel")
+    @DisplayName("[TC_SUB_59] importSubmissionScoresFromExcel - Bao phủ nhánh gradeStr là null trong Excel")
     void importSubmissionScoresFromExcel_GradeNull_Success() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -1159,7 +1159,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_73: searchSubmission - Bao phủ pageSize là null (Không phân trang)")
+    @DisplayName("[TC_SUB_60] searchSubmission - Bao phủ pageSize là null (Không phân trang)")
     void searchSubmission_PageSizeNull_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<SubmissionSearchRequest> request = new BaseFilterSearchRequest<>();
@@ -1175,7 +1175,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_74: searchSubmission - Bao phủ pageSize là chuỗi rỗng")
+    @DisplayName("[TC_SUB_61] searchSubmission - Bao phủ pageSize là chuỗi rỗng")
     void searchSubmission_PageSizeEmpty_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<SubmissionSearchRequest> request = new BaseFilterSearchRequest<>();
@@ -1192,7 +1192,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_75: importSubmissionScoresFromExcel - Bao phủ gradeStr là chuỗi rỗng")
+    @DisplayName("[TC_SUB_62] importSubmissionScoresFromExcel - Bao phủ gradeStr là chuỗi rỗng")
     void importSubmissionScoresFromExcel_GradeEmptyString_Success() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);
@@ -1220,7 +1220,7 @@ class SubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_76: isBlank Helper - Bao phủ chuỗi chỉ chứa khoảng trắng")
+    @DisplayName("[TC_SUB_63] isBlank Helper - Bao phủ chuỗi chỉ chứa khoảng trắng")
     void importSubmissionScoresFromExcel_CodeWhitespace_ThrowsException() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         Workbook workbook = mock(Workbook.class);

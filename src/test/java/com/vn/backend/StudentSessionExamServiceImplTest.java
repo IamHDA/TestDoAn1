@@ -25,9 +25,7 @@ import com.vn.backend.services.EmailService;
 import com.vn.backend.services.NotificationService;
 import com.vn.backend.services.impl.StudentSessionExamServiceImpl;
 import com.vn.backend.utils.MessageUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -51,6 +49,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("StudentSessionExamServiceImpl Unit Tests")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class StudentSessionExamServiceImplTest {
 
     @Mock
@@ -94,7 +93,7 @@ class StudentSessionExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_01: searchClassStudentsForSessionExam - Thành công tìm kiếm học sinh trong lớp")
+    @DisplayName("[TC_SSE_01] searchClassStudentsForSessionExam - Thành công tìm kiếm học sinh trong lớp")
     void searchClassStudentsForSessionExam_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -117,7 +116,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_02: searchClassStudentsForSessionExam - Thành công tìm kiếm với từ khóa")
+    @DisplayName("[TC_SSE_02] searchClassStudentsForSessionExam - Thành công tìm kiếm với từ khóa")
     void searchClassStudentsForSessionExam_WithKeyword_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -136,7 +135,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_03: searchClassStudentsForSessionExam - Lỗi khi thiếu mã ca thi (sessionExamId)")
+    @DisplayName("[TC_SSE_03] searchClassStudentsForSessionExam - Lỗi khi thiếu mã ca thi (sessionExamId)")
     void searchClassStudentsForSessionExam_ThrowsException_WhenSessionIdMissing() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(new StudentSessionExamSearchRequest()); // missing ID
@@ -146,7 +145,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_04: searchClassStudentsForSessionExam - Lỗi khi ca thi không tồn tại")
+    @DisplayName("[TC_SSE_04] searchClassStudentsForSessionExam - Lỗi khi ca thi không tồn tại")
     void searchClassStudentsForSessionExam_ThrowsException_WhenSessionNotFound() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -161,7 +160,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_05: searchClassStudentsForSessionExam - Lỗi khi giáo viên không sở hữu ca thi")
+    @DisplayName("[TC_SSE_05] searchClassStudentsForSessionExam - Lỗi khi giáo viên không sở hữu ca thi")
     void searchClassStudentsForSessionExam_ThrowsForbidden_WhenNotOwner() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -182,7 +181,7 @@ class StudentSessionExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_06: addStudents - Thành công thêm sinh viên và tạo thông báo")
+    @DisplayName("[TC_SSE_06] addStudents - Thành công thêm sinh viên và tạo thông báo")
     void addStudents_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -210,7 +209,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_07: addStudents - Bỏ qua sinh viên đã tồn tại trong danh sách")
+    @DisplayName("[TC_SSE_07] addStudents - Bỏ qua sinh viên đã tồn tại trong danh sách")
     void addStudents_SkipExisting_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -234,7 +233,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_08: addStudents - Lỗi khi ca thi không tồn tại")
+    @DisplayName("[TC_SSE_08] addStudents - Lỗi khi ca thi không tồn tại")
     void addStudents_ThrowsException_WhenSessionNotFound() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(99L);
@@ -247,7 +246,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_09: addStudents - Lỗi khi trạng thái ca thi không phải NOT_STARTED")
+    @DisplayName("[TC_SSE_09] addStudents - Lỗi khi trạng thái ca thi không phải NOT_STARTED")
     void addStudents_ThrowsException_WhenSessionOngoing() {
         sessionExam.setStatus(SessionExamStatus.ONGOING);
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
@@ -263,7 +262,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_10: addStudents - Lỗi khi sinh viên không thuộc lớp học")
+    @DisplayName("[TC_SSE_10] addStudents - Lỗi khi sinh viên không thuộc lớp học")
     void addStudents_ThrowsException_WhenStudentNotInClass() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -280,7 +279,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_11: addStudents - Gửi email thông báo (Nếu lớp học bật notifyEmail)")
+    @DisplayName("[TC_SSE_11] addStudents - Gửi email thông báo (Nếu lớp học bật notifyEmail)")
     void addStudents_SendsEmail_WhenEnabled() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -313,7 +312,7 @@ class StudentSessionExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_12: removeStudent - Thành công xóa sinh viên khỏi ca thi")
+    @DisplayName("[TC_SSE_12] removeStudent - Thành công xóa sinh viên khỏi ca thi")
     void removeStudent_Success() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .studentSessionExamId(100L)
@@ -332,7 +331,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_13: removeStudent - Lỗi khi ca thi không tồn tại hoặc không đủ quyền")
+    @DisplayName("[TC_SSE_13] removeStudent - Lỗi khi ca thi không tồn tại hoặc không đủ quyền")
     void removeStudent_ThrowsException_WhenSessionNotFound() {
         when(authService.getCurrentUser()).thenReturn(teacher);
         when(sessionExamRepository.findBySessionExamIdAndCreatedByAndIsDeletedFalse(10L, 1L))
@@ -343,7 +342,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_14: removeStudent - Lỗi khi không tìm thấy bản xác nhận dự thi của SV")
+    @DisplayName("[TC_SSE_14] removeStudent - Lỗi khi không tìm thấy bản xác nhận dự thi của SV")
     void removeStudent_ThrowsException_WhenRecordNotFound() {
         when(authService.getCurrentUser()).thenReturn(teacher);
         when(sessionExamRepository.findBySessionExamIdAndCreatedByAndIsDeletedFalse(10L, 1L))
@@ -356,7 +355,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_15: removeStudent - Chặn xóa sinh viên đã bắt đầu tham gia làm bài")
+    @DisplayName("[TC_SSE_15] removeStudent - Chặn xóa sinh viên đã bắt đầu tham gia làm bài")
     void removeStudent_ThrowsException_WhenAlreadyParticipated() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .studentSessionExamId(100L)
@@ -379,7 +378,7 @@ class StudentSessionExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_16: searchClassStudentsForSessionExam - Thành công khi keyword tìm kiếm rỗng/null")
+    @DisplayName("[TC_SSE_16] searchClassStudentsForSessionExam - Thành công khi keyword tìm kiếm rỗng/null")
     void searchClassStudentsForSessionExam_NullKeyword_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -397,7 +396,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_17: searchClassStudentsForSessionExam - Thành công khi phân trang (pagination) bị null")
+    @DisplayName("[TC_SSE_17] searchClassStudentsForSessionExam - Thành công khi phân trang (pagination) bị null")
     void searchClassStudentsForSessionExam_NullPagination_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -416,7 +415,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_18: addStudents - Nhánh ClassroomSetting bị null (Không gửi email)")
+    @DisplayName("[TC_SSE_18] addStudents - Nhánh ClassroomSetting bị null (Không gửi email)")
     void addStudents_ClassroomSettingNull_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -435,7 +434,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_19: addStudents - Nhánh notifyEmail bị false (Bỏ qua gửi email)")
+    @DisplayName("[TC_SSE_19] addStudents - Nhánh notifyEmail bị false (Bỏ qua gửi email)")
     void addStudents_NotifyEmailDisabled_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -456,7 +455,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_20: addStudents - Nhánh email sinh viên bị null (Bỏ qua gửi email)")
+    @DisplayName("[TC_SSE_20] addStudents - Nhánh email sinh viên bị null (Bỏ qua gửi email)")
     void addStudents_StudentEmailNull_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -478,7 +477,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_21: addStudents - Chặn đứng lỗi khi quá trình gửi email gặp Exception")
+    @DisplayName("[TC_SSE_21] addStudents - Chặn đứng lỗi khi quá trình gửi email gặp Exception")
     void addStudents_EmailServiceThrowsException_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -500,7 +499,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_22: removeStudent - Chặn xóa khi sinh viên đã tham gia (joinedAt != null)")
+    @DisplayName("[TC_SSE_22] removeStudent - Chặn xóa khi sinh viên đã tham gia (joinedAt != null)")
     void removeStudent_ThrowsException_WhenJoinedAtNotNull() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .joinedAt(LocalDateTime.now()) // Nhánh joinedAt
@@ -515,7 +514,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_23: removeStudent - Chặn xóa khi trạng thái bài thi là ONGOING")
+    @DisplayName("[TC_SSE_23] removeStudent - Chặn xóa khi trạng thái bài thi là ONGOING")
     void removeStudent_ThrowsException_WhenStatusOngoing() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .submissionStatus(ExamSubmissionStatus.NOT_SUBMITTED) // Nhánh status NOT_SUBMITTED (đang làm)
@@ -530,7 +529,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_24: removeStudent - Chặn xóa khi trạng thái bài thi là SUBMITTED")
+    @DisplayName("[TC_SSE_24] removeStudent - Chặn xóa khi trạng thái bài thi là SUBMITTED")
     void removeStudent_ThrowsException_WhenStatusSubmitted() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .submissionStatus(ExamSubmissionStatus.SUBMITTED) // Nhánh status submitted
@@ -545,7 +544,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_25: removeStudent - Chặn xóa khi đã có thời gian nộp bài (submissionTime != null)")
+    @DisplayName("[TC_SSE_25] removeStudent - Chặn xóa khi đã có thời gian nộp bài (submissionTime != null)")
     void removeStudent_ThrowsException_WhenSubmissionTimeNotNull() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .submissionTime(LocalDateTime.now()) // Nhánh submissionTime
@@ -560,7 +559,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_26: searchClassStudentsForSessionExam - Lỗi khi bộ lọc (filters) bị null")
+    @DisplayName("[TC_SSE_26] searchClassStudentsForSessionExam - Lỗi khi bộ lọc (filters) bị null")
     void searchClassStudentsForSessionExam_ThrowsException_WhenFilterNull() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(null); // Nhánh filter null
@@ -574,7 +573,7 @@ class StudentSessionExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_27: searchClassStudentsForSessionExam - Thành công xử lý sinh viên CHƯA tham gia (joined = 0)")
+    @DisplayName("[TC_SSE_27] searchClassStudentsForSessionExam - Thành công xử lý sinh viên CHƯA tham gia (joined = 0)")
     void searchClassStudentsForSessionExam_NotJoined_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -595,7 +594,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_28: searchClassStudentsForSessionExam - Keyword chỉ có khoảng trắng (Verify trim().isEmpty())")
+    @DisplayName("[TC_SSE_28] searchClassStudentsForSessionExam - Keyword chỉ có khoảng trắng (Verify trim().isEmpty())")
     void searchClassStudentsForSessionExam_WhitespaceKeyword_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -615,7 +614,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_29: searchClassStudentsForSessionExam - Pagination không null nhưng PagingMeta bị null")
+    @DisplayName("[TC_SSE_29] searchClassStudentsForSessionExam - Pagination không null nhưng PagingMeta bị null")
     void searchClassStudentsForSessionExam_PaginationExistsButMetaNull_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -634,7 +633,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_30: addStudents - Request với danh sách sinh viên rỗng (Loop safety)")
+    @DisplayName("[TC_SSE_30] addStudents - Request với danh sách sinh viên rỗng (Loop safety)")
     void addStudents_EmptyStudentList_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -649,7 +648,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_31: removeStudent - Chặn xóa khi submissionStatus null nhưng joinedAt có giá trị")
+    @DisplayName("[TC_SSE_31] removeStudent - Chặn xóa khi submissionStatus null nhưng joinedAt có giá trị")
     void removeStudent_StatusNullButJoinedAtNotNull_ThrowsException() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .joinedAt(LocalDateTime.now())
@@ -665,7 +664,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_32: removeStudent - Chặn xóa khi submissionStatus là SUBMITTED dù submissionTime bằng null")
+    @DisplayName("[TC_SSE_32] removeStudent - Chặn xóa khi submissionStatus là SUBMITTED dù submissionTime bằng null")
     void removeStudent_StatusSubmittedButTimeNull_ThrowsException() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .submissionTime(null)
@@ -685,7 +684,7 @@ class StudentSessionExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_33: searchClassStudentsForSessionExam - Thành công tính toán thông tin phân trang (Tổng số dòng/trang)")
+    @DisplayName("[TC_SSE_33] searchClassStudentsForSessionExam - Thành công tính toán thông tin phân trang (Tổng số dòng/trang)")
     void searchClassStudentsForSessionExam_PaginationMeta_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();
@@ -710,7 +709,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_34: addStudents - Thành công xử lý danh sách hỗn hợp (Sinh viên mới và sinh viên đã có)")
+    @DisplayName("[TC_SSE_34] addStudents - Thành công xử lý danh sách hỗn hợp (Sinh viên mới và sinh viên đã có)")
     void addStudents_MixedList_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -739,7 +738,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_35: removeStudent - Chặn xóa khi submissionTime tồn tại mặc dù status nộp bài bị NULL")
+    @DisplayName("[TC_SSE_35] removeStudent - Chặn xóa khi submissionTime tồn tại mặc dù status nộp bài bị NULL")
     void removeStudent_StatusNull_SubmissionTimeExists_ThrowsException() {
         StudentSessionExam sse = StudentSessionExam.builder()
                 .submissionTime(LocalDateTime.now()) // Có thời gian nộp
@@ -755,7 +754,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_36: addStudents - Thành công khi sinh viên có email đầy đủ nhưng lớp học tắt tính năng notifyEmail")
+    @DisplayName("[TC_SSE_36] addStudents - Thành công khi sinh viên có email đầy đủ nhưng lớp học tắt tính năng notifyEmail")
     void addStudents_NotifyEmailOff_WithValidStudentEmail_Success() {
         StudentSessionExamAddRequest request = new StudentSessionExamAddRequest();
         request.setSessionExamId(10L);
@@ -776,7 +775,7 @@ class StudentSessionExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_37: searchClassStudentsForSessionExam - Kiểm tra tính toàn vẹn của dữ liệu Mapping DTO")
+    @DisplayName("[TC_SSE_37] searchClassStudentsForSessionExam - Kiểm tra tính toàn vẹn của dữ liệu Mapping DTO")
     void searchClassStudentsForSessionExam_DataIntegrity_Success() {
         BaseFilterSearchRequest<StudentSessionExamSearchRequest> request = new BaseFilterSearchRequest<>();
         StudentSessionExamSearchRequest filter = new StudentSessionExamSearchRequest();

@@ -26,9 +26,7 @@ import com.vn.backend.services.RedisService;
 import com.vn.backend.services.WebSocketService;
 import com.vn.backend.services.impl.SessionExamServiceImpl;
 import com.vn.backend.utils.MessageUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -47,6 +45,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SessionExamServiceImpl Unit Tests")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class SessionExamServiceImplTest {
 
         @Mock
@@ -119,7 +118,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("create - thành công khi thông tin hợp lệ")
+        @DisplayName("[TC_SE_01] create - thành công khi thông tin hợp lệ")
         void create_Success() {
                 LocalDateTime start = LocalDateTime.now().plusMinutes(10);
                 LocalDateTime end = start.plusMinutes(60);
@@ -160,7 +159,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("update - thành công khi cập nhật thông tin hợp lệ")
+        @DisplayName("[TC_SE_02] update - thành công khi cập nhật thông tin hợp lệ")
         void update_Success() {
                 LocalDateTime now = LocalDateTime.now();
                 SessionExam existing = SessionExam.builder()
@@ -191,7 +190,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getDetail - thành công khi session exam tồn tại")
+        @DisplayName("[TC_SE_03] getDetail - thành công khi session exam tồn tại")
         void getDetail_Success() {
                 SessionExam existing = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -216,7 +215,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("endLiveSessionExam - thành công thực hiện chấm điểm hàng loạt và cập nhật trạng thái")
+        @DisplayName("[TC_SE_04] endLiveSessionExam - thành công thực hiện chấm điểm hàng loạt và cập nhật trạng thái")
         void endLiveSessionExam_Success() {
                 SessionExam sessionExam = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -240,7 +239,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("searchSessionExamByTeacher - thành công trả về danh sách ca thi của giáo viên")
+        @DisplayName("[TC_SE_05] searchSessionExamByTeacher - thành công trả về danh sách ca thi của giáo viên")
         void searchSessionExamByTeacher_Success() {
                 BaseFilterSearchRequest<SessionExamSearchTeacherRequest> request = new BaseFilterSearchRequest<>();
                 request.setFilters(new SessionExamSearchTeacherRequest());
@@ -262,7 +261,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("delete - thành công đánh dấu isDeleted = true")
+        @DisplayName("[TC_SE_06] delete - thành công đánh dấu isDeleted = true")
         void delete_Success() {
                 SessionExam existing = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -281,7 +280,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getExamQuestions - thành công khi sinh viên trong lớp và đề thi hợp lệ")
+        @DisplayName("[TC_SE_07] getExamQuestions - thành công khi sinh viên trong lớp và đề thi hợp lệ")
         void getExamQuestions_Success() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).fullName("Student Name").build();
@@ -319,7 +318,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveExamAnswers - thành công khi lưu câu trả lời cho bài thi FLEXIBLE")
+        @DisplayName("[TC_SE_08] saveExamAnswers - thành công khi lưu câu trả lời cho bài thi FLEXIBLE")
         void saveExamAnswers_Success() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -354,7 +353,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("submitExam - thành công tính đúng điểm và xóa dữ liệu Redis")
+        @DisplayName("[TC_SE_09] submitExam - thành công tính đúng điểm và xóa dữ liệu Redis")
         void submitExam_Success() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -396,7 +395,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("joinSessionExam - thành công khi sinh viên đủ điều kiện")
+        @DisplayName("[TC_SE_10] joinSessionExam - thành công khi sinh viên đủ điều kiện")
         void joinSessionExam_Success() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).email("student@test.com").build();
@@ -426,7 +425,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveAnswers (Strict) - thành công khi token hợp lệ và đang trong giờ thi")
+        @DisplayName("[TC_SE_11] saveAnswers (Strict) - thành công khi token hợp lệ và đang trong giờ thi")
         void saveAnswers_Strict_Success() {
                 Long sessionExamId = 1L;
                 String token = "valid-token";
@@ -452,7 +451,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getExamMonitoring - thành công trả về dữ liệu giám sát cho giáo viên")
+        @DisplayName("[TC_SE_12] getExamMonitoring - thành công trả về dữ liệu giám sát cho giáo viên")
         void getExamMonitoring_Success() {
                 Long sessionExamId = 1L;
                 User teacher = User.builder().id(1L).build();
@@ -481,7 +480,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveExamAnswers - ném exception khi gọi cho bài thi STRICT (chỉ dùng cho FLEXIBLE)")
+        @DisplayName("[TC_SE_13] saveExamAnswers - ném exception khi gọi cho bài thi STRICT (chỉ dùng cho FLEXIBLE)")
         void saveExamAnswers_ThrowsForbidden_WhenStrictMode() {
                 Long sessionExamId = 1L;
                 SessionExam sessionExam = SessionExam.builder()
@@ -501,7 +500,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("submitExam - ném exception khi sinh viên đã nộp bài trước đó")
+        @DisplayName("[TC_SE_14] submitExam - ném exception khi sinh viên đã nộp bài trước đó")
         void submitExam_ThrowsForbidden_WhenAlreadySubmitted() {
                 Long sessionExamId = 1L;
                 StudentSessionExam sse = StudentSessionExam.builder()
@@ -522,7 +521,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getExamQuestions - ném exception khi sinh viên không thuộc lớp học")
+        @DisplayName("[TC_SE_15] getExamQuestions - ném exception khi sinh viên không thuộc lớp học")
         void getExamQuestions_ThrowsForbidden_WhenStudentNotInClass() {
                 Long sessionExamId = 1L;
                 SessionExam sessionExam = SessionExam.builder().sessionExamId(sessionExamId).classId(10L).build();
@@ -539,7 +538,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("create - ném exception khi không có quyền (không phải giáo viên lớp)")
+        @DisplayName("[TC_SE_16] create - ném exception khi không có quyền (không phải giáo viên lớp)")
         void create_ThrowsForbidden_WhenNotTeacherOfClass() {
                 LocalDateTime start = LocalDateTime.now().plusMinutes(10);
                 LocalDateTime end = start.plusMinutes(60);
@@ -558,7 +557,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("create - ném exception khi thời gian không hợp lệ (bắt đầu quá sớm)")
+        @DisplayName("[TC_SE_17] create - ném exception khi thời gian không hợp lệ (bắt đầu quá sớm)")
         void create_ThrowsException_WhenStartTimeTooEarly() {
                 LocalDateTime start = LocalDateTime.now().plusMinutes(2); // Less than 5 mins
                 LocalDateTime end = start.plusMinutes(60);
@@ -572,7 +571,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("create - ném exception khi thời gian kết thúc trước thời gian bắt đầu")
+        @DisplayName("[TC_SE_18] create - ném exception khi thời gian kết thúc trước thời gian bắt đầu")
         void create_ThrowsException_WhenEndTimeBeforeStartTime() {
                 LocalDateTime start = LocalDateTime.now().plusMinutes(10);
                 LocalDateTime end = start.minusMinutes(5); // Lỗi logic: End < Start
@@ -585,7 +584,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("update - ném exception khi cố tình sửa ca thi đang diễn ra (ONGOING) chống gian lận")
+        @DisplayName("[TC_SE_19] update - ném exception khi cố tình sửa ca thi đang diễn ra (ONGOING) chống gian lận")
         void update_ThrowsException_WhenExamOngoing() {
                 SessionExam existing = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -607,7 +606,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("joinSessionExam - trả về NOT_STARTED khi sinh viên vào quá sớm thay vì cho phép thi")
+        @DisplayName("[TC_SE_20] joinSessionExam - trả về NOT_STARTED khi sinh viên vào quá sớm thay vì cho phép thi")
         void joinSessionExam_ReturnsNotStarted_WhenExamTooEarly() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -631,7 +630,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("submitExam - thành công (0 điểm) kể cả khi nộp giấy trắng (Mảng answers rỗng)")
+        @DisplayName("[TC_SE_21] submitExam - thành công (0 điểm) kể cả khi nộp giấy trắng (Mảng answers rỗng)")
         void submitExam_Success_WhenSubmittingBlankPaper() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -662,7 +661,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("update - ném exception khi ca thi đã ENDED")
+        @DisplayName("[TC_SE_22] update - ném exception khi ca thi đã ENDED")
         void update_ThrowsException_WhenExamEnded() {
                 SessionExam existing = SessionExam.builder().sessionExamId(1L).status(SessionExamStatus.ENDED).build();
                 when(authService.getCurrentUser()).thenReturn(teacher);
@@ -673,7 +672,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("delete - ném exception khi ca thi đang ONGOING")
+        @DisplayName("[TC_SE_23] delete - ném exception khi ca thi đang ONGOING")
         void delete_ThrowsException_WhenExamOngoing() {
                 SessionExam existing = SessionExam.builder().sessionExamId(1L).status(SessionExamStatus.ONGOING)
                                 .build();
@@ -684,7 +683,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("delete - ném exception khi ca thi đã ENDED")
+        @DisplayName("[TC_SE_24] delete - ném exception khi ca thi đã ENDED")
         void delete_ThrowsException_WhenExamEnded() {
                 SessionExam existing = SessionExam.builder().sessionExamId(1L).status(SessionExamStatus.ENDED).build();
                 when(authService.getCurrentUser()).thenReturn(teacher);
@@ -694,7 +693,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getDetail - ném exception khi ca thi không tồn tại")
+        @DisplayName("[TC_SE_25] getDetail - ném exception khi ca thi không tồn tại")
         void getDetail_ThrowsException_WhenExamNotFound() {
                 when(authService.getCurrentUser()).thenReturn(teacher);
                 when(sessionExamRepository.findBySessionExamIdAndCreatedByAndIsDeletedFalse(1L, 1L))
@@ -703,7 +702,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("create - ném exception khi không tìm thấy ExamId gốc")
+        @DisplayName("[TC_SE_26] create - ném exception khi không tìm thấy ExamId gốc")
         void create_ThrowsException_WhenExamIdNotFound() {
                 SessionExamCreateRequest request = new SessionExamCreateRequest();
                 request.setClassId(1L);
@@ -721,7 +720,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("endLiveSessionExam - không nổ lỗi khi phòng thi không có ai")
+        @DisplayName("[TC_SE_27] endLiveSessionExam - không nổ lỗi khi phòng thi không có ai")
         void endLiveSessionExam_DoesNotFail_WhenNoStudents() {
                 SessionExam sessionExam = SessionExam.builder().sessionExamId(1L).status(SessionExamStatus.ONGOING)
                                 .build();
@@ -736,7 +735,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("joinSessionExam - ném exception khi ca thi đã ENDED")
+        @DisplayName("[TC_SE_28] joinSessionExam - ném exception khi ca thi đã ENDED")
         void joinSessionExam_ThrowsException_WhenExamEnded() {
                 Long id = 1L;
                 User student = User.builder().id(2L).build();
@@ -753,7 +752,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("joinSessionExam - ném exception khi sinh viên không có quyền (Not Eligible)")
+        @DisplayName("[TC_SE_29] joinSessionExam - ném exception khi sinh viên không có quyền (Not Eligible)")
         void joinSessionExam_ThrowsException_WhenNotEligible() {
                 Long id = 1L;
                 User student = User.builder().id(2L).build();
@@ -768,7 +767,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getExamQuestions - ném exception khi không tìm thấy ca thi")
+        @DisplayName("[TC_SE_30] getExamQuestions - ném exception khi không tìm thấy ca thi")
         void getExamQuestions_ThrowsException_WhenExamNotFound() {
                 when(authService.getCurrentUser()).thenReturn(User.builder().id(2L).build());
                 when(sessionExamRepository.findById(1L)).thenReturn(Optional.empty());
@@ -776,7 +775,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getExamQuestions - truy vấn Database khi Redis Cache trống")
+        @DisplayName("[TC_SE_31] getExamQuestions - truy vấn Database khi Redis Cache trống")
         void getExamQuestions_FallbackToDatabase_WhenRedisCacheIsEmpty() {
                 Long id = 1L;
                 User student = User.builder().id(2L).build();
@@ -802,7 +801,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveExamAnswers - ném exception khi ca thi không tồn tại")
+        @DisplayName("[TC_SE_32] saveExamAnswers - ném exception khi ca thi không tồn tại")
         void saveExamAnswers_ThrowsException_WhenExamNotFound() {
                 ExamSaveAnswersRequest request = new ExamSaveAnswersRequest();
                 request.setSessionExamId(1L);
@@ -812,7 +811,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveExamAnswers - ném exception khi sinh viên đã học nộp bài (SUBMITTED)")
+        @DisplayName("[TC_SE_33] saveExamAnswers - ném exception khi sinh viên đã học nộp bài (SUBMITTED)")
         void saveExamAnswers_ThrowsException_WhenAlreadySubmitted() {
                 ExamSaveAnswersRequest request = new ExamSaveAnswersRequest();
                 request.setSessionExamId(1L);
@@ -829,7 +828,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("submitExam - ném exception khi ca thi không tồn tại")
+        @DisplayName("[TC_SE_34] submitExam - ném exception khi ca thi không tồn tại")
         void submitExam_ThrowsException_WhenExamNotFound() {
                 ExamSubmissionRequest request = new ExamSubmissionRequest();
                 request.setSessionExamId(1L);
@@ -839,7 +838,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("submitExam - tính điểm chính xác khi làm đúng 1 nửa số câu (5.0 điểm)")
+        @DisplayName("[TC_SE_35] submitExam - tính điểm chính xác khi làm đúng 1 nửa số câu (5.0 điểm)")
         void submitExam_Success_WithPartialCorrectAnswers() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -888,7 +887,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveAnswers_Strict - trả về 0 khi không nộp đáp án nào")
+        @DisplayName("[TC_SE_36] saveAnswers_Strict - trả về 0 khi không nộp đáp án nào")
         void saveAnswers_Strict_ReturnsZero_WhenNoAnswersProvided() {
                 SaveAnswersRequest req = new SaveAnswersRequest();
                 req.setAnswers(new ArrayList<>());
@@ -906,7 +905,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("saveAnswers_Strict - ném exception khi Token sai/phiên hết hạn (Invalid Token)")
+        @DisplayName("[TC_SE_37] saveAnswers_Strict - ném exception khi Token sai/phiên hết hạn (Invalid Token)")
         void saveAnswers_Strict_ThrowsException_WhenTokenInvalid() {
                 when(redisService.get(anyString(), eq(StudentInfoDTO.class))).thenReturn(null); // Sai token
                 assertThatThrownBy(() -> sessionExamService.saveAnswers(1L, "faketoken", new SaveAnswersRequest()))
@@ -914,7 +913,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("getExamMonitoring - ném exception khi không phải Giáo viên tạo đề")
+        @DisplayName("[TC_SE_38] getExamMonitoring - ném exception khi không phải Giáo viên tạo đề")
         void getExamMonitoring_ThrowsException_WhenNotTeacherOwner() {
                 User teacherHack = User.builder().id(99L).build();
                 when(authService.getCurrentUser()).thenReturn(teacherHack);
@@ -928,7 +927,7 @@ class SessionExamServiceImplTest {
         // ===========================================
 
         @Test
-        @DisplayName("TC_SE_39: getDescriptiveStatistic_Success - Tính toán thống kê khi có kết quả")
+        @DisplayName("[TC_SE_39] getDescriptiveStatistic_Success - Tính toán thống kê khi có kết quả")
         void getDescriptiveStatistic_Success() {
                 when(sessionExamRepository.findById(1L)).thenReturn(Optional.of(sessionExam));
                 when(studentSessionExamRepository.findAllScoresBySessionExamId(1L)).thenReturn(List.of(5.0, 8.0, 10.0));
@@ -942,7 +941,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_40: getDescriptiveStatistic_ZeroStudents - Bẫy trường hợp phòng thi rỗng")
+        @DisplayName("[TC_SE_40] getDescriptiveStatistic_ZeroStudents - Bẫy trường hợp phòng thi rỗng")
         void getDescriptiveStatistic_ZeroStudents() {
                 when(sessionExamRepository.findById(1L)).thenReturn(Optional.of(sessionExam));
                 when(studentSessionExamRepository.findAllScoresBySessionExamId(1L)).thenReturn(new ArrayList<>());
@@ -956,7 +955,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_41: getExamResults_Success - Lấy bảng điểm toàn phòng")
+        @DisplayName("[TC_SE_41] getExamResults_Success - Lấy bảng điểm toàn phòng")
         void getExamResults_Success() {
                 when(authService.getCurrentUser()).thenReturn(teacher);
                 // getExamResults gọi findBySessionExamIdAndCreatedByAndIsDeletedFalse
@@ -978,7 +977,7 @@ class SessionExamServiceImplTest {
         // ===========================================
 
         @Test
-        @DisplayName("TC_SE_42: searchSessionExamByStudent_Success - Tìm kiếm ca thi cho SV")
+        @DisplayName("[TC_SE_42] searchSessionExamByStudent_Success - Tìm kiếm ca thi cho SV")
         void searchSessionExamByStudent_Success() {
                 when(authService.getCurrentUser()).thenReturn(student);
                 when(sessionExamRepository.searchByStudent(any(), any()))
@@ -993,7 +992,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_43: getStudentExamOverview_Success - Xuất thẻ tổng quan sau thi")
+        @DisplayName("[TC_SE_43] getStudentExamOverview_Success - Xuất thẻ tổng quan sau thi")
         void getStudentExamOverview_Success() {
                 when(authService.getCurrentUser()).thenReturn(student);
                 when(sessionExamRepository.findById(1L)).thenReturn(Optional.of(sessionExam));
@@ -1011,7 +1010,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_44: getStudentExamResult_Success - Chi tiết bài làm sau thi")
+        @DisplayName("[TC_SE_44] getStudentExamResult_Success - Chi tiết bài làm sau thi")
         void getStudentExamResult_Success() {
                 when(authService.getCurrentUser()).thenReturn(student);
                 when(studentSessionExamRepository.getStudentExamResult(1L, 2L)).thenReturn(null); // Không có kết quả
@@ -1027,7 +1026,7 @@ class SessionExamServiceImplTest {
         // ===========================================
 
         @Test
-        @DisplayName("TC_SE_45: startLiveSessionExam_Success - Bật phòng LIVE thành công")
+        @DisplayName("[TC_SE_45] startLiveSessionExam_Success - Bật phòng LIVE thành công")
         void startLiveSessionExam_Success() {
                 SessionExam se = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -1046,7 +1045,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_46: startLiveSessionExam_ThrowsForbidden_WhenAlreadyStarted")
+        @DisplayName("[TC_SE_46] startLiveSessionExam_ThrowsForbidden_WhenAlreadyStarted")
         void startLiveSessionExam_ThrowsForbidden_WhenAlreadyStarted() {
                 SessionExam se = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -1061,7 +1060,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_47: processFlexExamStarted - Quét tài liệu làm bài còn lại và auto-submit khi hết giờ")
+        @DisplayName("[TC_SE_47] processFlexExamStarted - Quét tài liệu làm bài còn lại và auto-submit khi hết giờ")
         void processFlexExamStarted_WithNoActiveExams() {
                 // findActiveFlexExams trả về rỗng => không có gì để xử lý
                 when(studentSessionExamRepository.findActiveFlexExams(ExamSubmissionStatus.NOT_SUBMITTED))
@@ -1075,7 +1074,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_48: processExpiredNotStartedFlexExams - Không crash khi danh sách rỗng")
+        @DisplayName("[TC_SE_48] processExpiredNotStartedFlexExams - Không crash khi danh sách rỗng")
         void processExpiredNotStartedFlexExams_EmptyList() {
                 // findNotStartedExpiredFlexExamsWithSessionExam trả về rỗng => return sớm
                 when(studentSessionExamRepository.findNotStartedExpiredFlexExamsWithSessionExam(
@@ -1094,7 +1093,7 @@ class SessionExamServiceImplTest {
         // ===========================================
 
         @Test
-        @DisplayName("TC_SE_49: downloadExam_ThrowsException_WhenTokenInvalid - Token không hợp lệ")
+        @DisplayName("[TC_SE_49] downloadExam - ném exception khi Token không hợp lệ")
         void downloadExam_ThrowsException_WhenTokenInvalid() {
                 // Token không tìm thấy trong Redis => StudentInfoDTO = null => quăng lỗi
                 when(redisService.get(anyString(), eq(StudentInfoDTO.class))).thenReturn(null);
@@ -1109,7 +1108,7 @@ class SessionExamServiceImplTest {
         // ===========================================
 
         @Test
-        @DisplayName("TC_SE_50: joinSessionExam_Rejoin_Success - Sinh viên quay lại phòng thi đã join")
+        @DisplayName("[TC_SE_50] joinSessionExam_Rejoin_Success - Sinh viên quay lại phòng thi đã join")
         void joinSessionExam_Rejoin_Success() {
                 Long id = 1L;
                 User student = User.builder().id(2L).email("student@test.com").build();
@@ -1135,7 +1134,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_51: joinSessionExam_Rejoin_MissingToken_GeneratesNew - Sinh viên quay lại nhưng mất token trong Redis")
+        @DisplayName("[TC_SE_51] joinSessionExam_Rejoin_MissingToken_GeneratesNew - Sinh viên quay lại nhưng mất token trong Redis")
         void joinSessionExam_Rejoin_MissingToken_GeneratesNew() {
                 Long id = 1L;
                 User student = User.builder().id(2L).email("student@test.com").build();
@@ -1160,7 +1159,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_52: joinSessionExam_PhaseEnded_ThrowsException - Không cho join khi ca thi đã kết thúc")
+        @DisplayName("[TC_SE_52] joinSessionExam_PhaseEnded_ThrowsException - Không cho join khi ca thi đã kết thúc")
         void joinSessionExam_PhaseEnded_ThrowsException() {
                 Long id = 1L;
                 User student = User.builder().id(2L).build();
@@ -1180,7 +1179,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_53: submitExam_Success_FullMultiChoice - Chấm điểm câu hỏi Single Choice (MULTI_CHOICE)")
+        @DisplayName("[TC_SE_53] submitExam_Success_FullMultiChoice - Chấm điểm câu hỏi Single Choice (MULTI_CHOICE)")
         void submitExam_Success_FullMultiChoice() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -1216,7 +1215,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_54: submitExam_Success_MultipleChoiceLogic - Chấm điểm câu hỏi Multiple Choice (nhiều đáp án đúng)")
+        @DisplayName("[TC_SE_54] submitExam_Success_MultipleChoiceLogic - Chấm điểm câu hỏi Multiple Choice (nhiều đáp án đúng)")
         void submitExam_Success_MultipleChoiceLogic() {
                 Long sessionExamId = 1L;
                 User student = User.builder().id(2L).build();
@@ -1256,7 +1255,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_55: submitExam_ThrowsForbidden_WhenAlreadySubmitted_ExamRequest - Chặn nộp bài khi đã nộp rồi (Sử dụng ExamSubmissionRequest)")
+        @DisplayName("[TC_SE_55] submitExam - Chặn nộp bài khi đã nộp rồi (Sử dụng ExamSubmissionRequest)")
         void submitExam_ThrowsForbidden_WhenAlreadySubmitted_ExamRequest() {
                 ExamSubmissionRequest request = new ExamSubmissionRequest();
                 request.setSessionExamId(1L);
@@ -1276,7 +1275,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_59: getStudentExamOverview_Flexible_Success - Lấy tổng quan bài thi mode FLEXIBLE")
+        @DisplayName("[TC_SE_59] getStudentExamOverview_Flexible_Success - Lấy tổng quan bài thi mode FLEXIBLE")
         void getStudentExamOverview_Flexible_Success() {
                 Long id = 1L;
                 User student = User.builder().id(2L).build();
@@ -1300,7 +1299,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_56: processFlexExamStarted_AutoSubmitsExpired - Tự động nộp bài khi hết giờ trong mode FLEXIBLE")
+        @DisplayName("[TC_SE_56] processFlexExamStarted_AutoSubmitsExpired - Tự động nộp bài khi hết giờ trong mode FLEXIBLE")
         void processFlexExamStarted_AutoSubmitsExpired() {
                 LocalDateTime now = LocalDateTime.now();
                 SessionExam exam = SessionExam.builder().sessionExamId(1L).duration(60L).build();
@@ -1323,7 +1322,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_57: processFlexExamStarted_SavesProgress - Lưu tạm kết quả thi từ Redis vào DB định kỳ")
+        @DisplayName("[TC_SE_57] processFlexExamStarted_SavesProgress - Lưu tạm kết quả thi từ Redis vào DB định kỳ")
         void processFlexExamStarted_SavesProgress() {
                 LocalDateTime now = LocalDateTime.now();
                 SessionExam exam = SessionExam.builder().sessionExamId(1L).duration(60L).build();
@@ -1345,7 +1344,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_58: processExpiredNotStartedFlexExams_Success - Chấm 0 điểm cho SV không làm bài mà ca thi đã kết thúc")
+        @DisplayName("[TC_SE_58] processExpiredNotStartedFlexExams_Success - Chấm 0 điểm cho SV không làm bài mà ca thi đã kết thúc")
         void processExpiredNotStartedFlexExams_Success() {
                 LocalDateTime now = LocalDateTime.now();
                 SessionExam exam = SessionExam.builder().sessionExamId(1L).build();
@@ -1363,7 +1362,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_60: getExamMonitoring_Ended_ReturnsLogData - Lấy dữ liệu giám sát từ Log sau khi thi xong")
+        @DisplayName("[TC_SE_60] getExamMonitoring_Ended_ReturnsLogData - Lấy dữ liệu giám sát từ Log sau khi thi xong")
         void getExamMonitoring_Ended_ReturnsLogData() {
                 Long id = 1L;
                 User teacher = User.builder().id(1L).build();
@@ -1383,7 +1382,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_61: getStudentExamResult_Success - Lấy kết quả bài làm thành công")
+        @DisplayName("[TC_SE_61] getStudentExamResult_Success - Lấy kết quả bài làm thành công")
         void getStudentExamResult_Success_Positive() {
                 Long sseId = 1L;
                 User student = User.builder().id(2L).build();
@@ -1399,7 +1398,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_62: startLiveSessionExam_Fails_WhenAlreadyPastEndDate - Không cho mở phòng thi khi đã qua thời gian kết thúc")
+        @DisplayName("[TC_SE_62] startLiveSessionExam_Fails_WhenAlreadyPastEndDate - Không cho mở phòng thi khi đã qua thời gian kết thúc")
         void startLiveSessionExam_Fails_WhenAlreadyPastEndDate() {
                 SessionExam se = SessionExam.builder()
                                 .sessionExamId(1L)
@@ -1413,7 +1412,7 @@ class SessionExamServiceImplTest {
         }
 
         @Test
-        @DisplayName("TC_SE_63: downloadExam_Success_PositivePath - Lấy đề thi thành công trong mode LIVE/STRICT")
+        @DisplayName("[TC_SE_63] downloadExam_Success_PositivePath - Lấy đề thi thành công trong mode LIVE/STRICT")
         void downloadExam_Success_PositivePath() {
                 Long id = 1L;
                 String token = "valid-token";

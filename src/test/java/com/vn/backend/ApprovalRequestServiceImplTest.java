@@ -126,7 +126,8 @@ class ApprovalRequestServiceImplTest {
     @Test
     @DisplayName("[TC_ARS_03] createRequest - thất bại khi requesterId null")
     void createRequest_Fail_RequesterIdNull() {
-        assertThatThrownBy(() -> approvalRequestService.createRequest(RequestType.TOPIC_CREATE, "Desc", null, List.of(1L)))
+        assertThatThrownBy(
+                () -> approvalRequestService.createRequest(RequestType.TOPIC_CREATE, "Desc", null, List.of(1L)))
                 .isInstanceOf(AppException.class)
                 .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
     }
@@ -149,7 +150,7 @@ class ApprovalRequestServiceImplTest {
     @DisplayName("[TC_ARS_05] getApprovalRequestDetail - thành công cho TEACHER")
     void getApprovalRequestDetail_Teacher_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
-        
+
         ApprovalRequest request = new ApprovalRequest();
         request.setId(10L);
         request.setRequestType(RequestType.CLASS_CREATE);
@@ -161,7 +162,7 @@ class ApprovalRequestServiceImplTest {
 
         // Teacher should call findByIdWithDetails with their userId
         when(approvalRequestRepository.findByIdWithDetails(10L, 2L)).thenReturn(Optional.of(request));
-        
+
         Classroom classroom = new Classroom();
         classroom.setClassroomId(100L);
         classroom.setTeacher(teacherUser);
@@ -184,14 +185,14 @@ class ApprovalRequestServiceImplTest {
         request.setId(10L);
         request.setRequestType(RequestType.CLASS_CREATE);
         request.setRequester(teacherUser);
-        
+
         ApprovalRequestItems item = new ApprovalRequestItems();
         item.setEntityId(100L);
         item.setIsDeleted(false);
         request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(10L, 2L)).thenReturn(Optional.of(request));
-        
+
         Classroom classroom = new Classroom();
         classroom.setClassroomId(100L);
         classroom.setTeacher(teacherUser);
@@ -216,14 +217,14 @@ class ApprovalRequestServiceImplTest {
         request.setId(11L);
         request.setRequestType(RequestType.TOPIC_CREATE);
         request.setRequester(adminUser);
-        
+
         ApprovalRequestItems item = new ApprovalRequestItems();
         item.setEntityId(1L);
         item.setIsDeleted(false);
         request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(11L, null)).thenReturn(Optional.of(request));
-        
+
         Topic topic = new Topic();
         topic.setTopicId(1L);
         topic.setTopicName("Topic 1");
@@ -234,9 +235,11 @@ class ApprovalRequestServiceImplTest {
         activeTopic.setTopicId(2L);
         activeTopic.setTopicName("Active Topic");
         activeTopic.setPrerequisiteTopicId(3L);
-        Topic prereq = new Topic(); prereq.setTopicId(3L); prereq.setTopicName("Prereq");
+        Topic prereq = new Topic();
+        prereq.setTopicId(3L);
+        prereq.setTopicName("Prereq");
         activeTopic.setPrerequisiteTopic(prereq);
-        
+
         when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(50L)).thenReturn(List.of(activeTopic));
 
         ApprovalRequestDetailResponse response = approvalRequestService.getApprovalRequestDetail(11L);
@@ -256,14 +259,14 @@ class ApprovalRequestServiceImplTest {
         request.setId(12L);
         request.setRequestType(RequestType.QUESTION_REVIEW_CREATE);
         request.setRequester(adminUser);
-        
+
         ApprovalRequestItems item = new ApprovalRequestItems();
         item.setEntityId(100L);
         item.setIsDeleted(false);
         request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(12L, null)).thenReturn(Optional.of(request));
-        
+
         Question question = new Question();
         question.setQuestionId(100L);
         question.setContent("Q Content");
@@ -272,10 +275,16 @@ class ApprovalRequestServiceImplTest {
         when(questionRepository.findById(100L)).thenReturn(Optional.of(question));
 
         com.vn.backend.entities.Answer a1 = new com.vn.backend.entities.Answer();
-        a1.setAnswerId(1L); a1.setContent("A1"); a1.setIsCorrect(true); a1.setDisplayOrder(1); a1.setIsDeleted(false);
+        a1.setAnswerId(1L);
+        a1.setContent("A1");
+        a1.setIsCorrect(true);
+        a1.setDisplayOrder(1);
+        a1.setIsDeleted(false);
         com.vn.backend.entities.Answer a2 = new com.vn.backend.entities.Answer();
-        a2.setAnswerId(2L); a2.setContent("Deleted"); a2.setIsDeleted(true);
-        
+        a2.setAnswerId(2L);
+        a2.setContent("Deleted");
+        a2.setIsDeleted(true);
+
         when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(List.of(a1, a2));
 
         ApprovalRequestDetailResponse response = approvalRequestService.getApprovalRequestDetail(12L);
@@ -294,14 +303,14 @@ class ApprovalRequestServiceImplTest {
         request.setId(13L);
         request.setRequestType(RequestType.TOPIC_CREATE);
         request.setRequester(adminUser);
-        
+
         ApprovalRequestItems item = new ApprovalRequestItems();
         item.setEntityId(1L);
         item.setIsDeleted(false);
         request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(13L, null)).thenReturn(Optional.of(request));
-        
+
         Topic topic = new Topic();
         topic.setTopicId(1L);
         topic.setSubjectId(50L);
@@ -331,13 +340,13 @@ class ApprovalRequestServiceImplTest {
         request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(15L, null)).thenReturn(Optional.of(request));
-        
+
         Topic topic = new Topic();
         topic.setTopicId(1L);
         topic.setSubjectId(50L);
         topic.setPrerequisiteTopicId(99L);
         topic.setPrerequisiteTopic(null); // ID exists but entity is null
-        
+
         when(topicRepository.findByTopicIdAndIsDeletedFalse(1L)).thenReturn(topic);
         when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(50L)).thenReturn(List.of(topic));
 
@@ -362,7 +371,7 @@ class ApprovalRequestServiceImplTest {
         request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(14L, null)).thenReturn(Optional.of(request));
-        
+
         Question question = new Question();
         question.setQuestionId(101L);
         question.setType(null); // Null type
@@ -396,7 +405,7 @@ class ApprovalRequestServiceImplTest {
     @DisplayName("[TC_ARS_13] searchApprovalRequest - thành công cho TEACHER (lọc theo userId)")
     void searchApprovalRequest_Teacher_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
-        
+
         com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest filters = new com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest();
         BaseFilterSearchRequest<com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(filters);
@@ -411,18 +420,20 @@ class ApprovalRequestServiceImplTest {
         Page<ApprovalRequest> page = new PageImpl<>(List.of(entity));
         when(approvalRequestRepository.searchApprovalRequest(any(), any())).thenReturn(page);
 
-        ResponseListData<ApprovalRequestSearchResponse> response = approvalRequestService.searchApprovalRequest(request);
+        ResponseListData<ApprovalRequestSearchResponse> response = approvalRequestService
+                .searchApprovalRequest(request);
 
         assertThat(response).isNotNull();
         assertThat(response.getContent()).hasSize(1);
-        verify(approvalRequestRepository).searchApprovalRequest(argThat(dto -> dto.getUserId() != null && dto.getUserId().equals(2L)), any());
+        verify(approvalRequestRepository)
+                .searchApprovalRequest(argThat(dto -> dto.getUserId() != null && dto.getUserId().equals(2L)), any());
     }
 
     @Test
     @DisplayName("[TC_ARS_14] searchApprovalRequest - thành công cho ADMIN (không lọc theo userId)")
     void searchApprovalRequest_Admin_Success() {
         when(authService.getCurrentUser()).thenReturn(adminUser);
-        
+
         com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest filters = new com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest();
         BaseFilterSearchRequest<com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(filters);
@@ -437,7 +448,8 @@ class ApprovalRequestServiceImplTest {
         Page<ApprovalRequest> page = new PageImpl<>(List.of(entity));
         when(approvalRequestRepository.searchApprovalRequest(any(), any())).thenReturn(page);
 
-        ResponseListData<ApprovalRequestSearchResponse> response = approvalRequestService.searchApprovalRequest(request);
+        ResponseListData<ApprovalRequestSearchResponse> response = approvalRequestService
+                .searchApprovalRequest(request);
 
         assertThat(response).isNotNull();
         verify(approvalRequestRepository).searchApprovalRequest(argThat(dto -> dto.getUserId() == null), any());
@@ -524,7 +536,8 @@ class ApprovalRequestServiceImplTest {
         when(questionRepository.save(any(Question.class))).thenReturn(savedReview);
 
         com.vn.backend.entities.Answer a1 = new com.vn.backend.entities.Answer();
-        a1.setAnswerId(1L); a1.setIsDeleted(false);
+        a1.setAnswerId(1L);
+        a1.setIsDeleted(false);
         when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(List.of(a1));
 
         approvalRequestService.approveRequest(20L);
@@ -558,7 +571,8 @@ class ApprovalRequestServiceImplTest {
         when(questionRepository.save(any(Question.class))).thenReturn(new Question());
 
         com.vn.backend.entities.Answer a1 = new com.vn.backend.entities.Answer();
-        a1.setAnswerId(1L); a1.setIsDeleted(true); // Deleted answer
+        a1.setAnswerId(1L);
+        a1.setIsDeleted(true); // Deleted answer
         when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(List.of(a1));
 
         approvalRequestService.approveRequest(21L);
@@ -583,12 +597,20 @@ class ApprovalRequestServiceImplTest {
         ApprovalRequestItems item2 = new ApprovalRequestItems();
         item2.setEntityId(2L);
         item2.setCreatedAt(java.time.LocalDateTime.now());
-        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(10L)).thenReturn(new ArrayList<>(List.of(item1, item2)));
+        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(10L))
+                .thenReturn(new ArrayList<>(List.of(item1, item2)));
 
-        Topic t1 = new Topic(); t1.setTopicId(1L); t1.setSubjectId(50L);
-        Topic t2 = new Topic(); t2.setTopicId(2L); t2.setSubjectId(50L);
+        Topic t1 = new Topic();
+        t1.setTopicId(1L);
+        t1.setSubjectId(50L);
+        Topic t2 = new Topic();
+        t2.setTopicId(2L);
+        t2.setSubjectId(50L);
         when(topicRepository.findByTopicIdInAndIsDeletedFalse(anyList())).thenReturn(List.of(t1, t2));
-        when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(50L)).thenReturn(new ArrayList<>()); // No old active topics
+        when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(50L)).thenReturn(new ArrayList<>()); // No
+                                                                                                                  // old
+                                                                                                                  // active
+                                                                                                                  // topics
 
         approvalRequestService.approveRequest(10L);
 
@@ -614,9 +636,12 @@ class ApprovalRequestServiceImplTest {
         ApprovalRequestItems item1 = new ApprovalRequestItems();
         item1.setEntityId(1L);
         item1.setCreatedAt(java.time.LocalDateTime.now());
-        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(10L)).thenReturn(new ArrayList<>(List.of(item1)));
+        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(10L))
+                .thenReturn(new ArrayList<>(List.of(item1)));
 
-        Topic t1 = new Topic(); t1.setTopicId(1L); t1.setSubjectId(50L);
+        Topic t1 = new Topic();
+        t1.setTopicId(1L);
+        t1.setSubjectId(50L);
         when(topicRepository.findByTopicIdInAndIsDeletedFalse(List.of(1L))).thenReturn(List.of(t1));
 
         // Old topic that should be deactivated
@@ -643,9 +668,12 @@ class ApprovalRequestServiceImplTest {
 
         ApprovalRequestItems item = new ApprovalRequestItems();
         item.setEntityId(1L);
-        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(30L)).thenReturn(new ArrayList<>(List.of(item)));
+        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(30L))
+                .thenReturn(new ArrayList<>(List.of(item)));
 
-        Topic t1 = new Topic(); t1.setTopicId(1L); t1.setSubjectId(50L);
+        Topic t1 = new Topic();
+        t1.setTopicId(1L);
+        t1.setSubjectId(50L);
         when(topicRepository.findByTopicIdInAndIsDeletedFalse(List.of(1L))).thenReturn(List.of(t1));
         when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(50L)).thenReturn(List.of());
 
@@ -691,7 +719,8 @@ class ApprovalRequestServiceImplTest {
         request.setStatus(ApprovalStatus.PENDING);
         request.setRequestType(RequestType.TOPIC_CREATE);
         when(approvalRequestRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(request));
-        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(1L)).thenReturn(new ArrayList<>(List.of(new ApprovalRequestItems())));
+        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(1L))
+                .thenReturn(new ArrayList<>(List.of(new ApprovalRequestItems())));
         when(topicRepository.findByTopicIdInAndIsDeletedFalse(anyList())).thenReturn(List.of()); // Empty
 
         assertThatThrownBy(() -> approvalRequestService.approveRequest(1L))
