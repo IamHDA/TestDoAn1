@@ -55,7 +55,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("SubmissionServiceImpl - Full Branch Coverage Test Suite")
-class SubmissionServiceImplTest {
+class AssignmentSubmissionServiceImplTest {
 
     // ──────────────────────── Mocks ────────────────────────
     @Mock private AuthService            authService;
