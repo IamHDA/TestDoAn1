@@ -21,9 +21,7 @@ import com.vn.backend.repositories.SubjectRepository;
 import com.vn.backend.services.AuthService;
 import com.vn.backend.services.impl.ExamServiceImpl;
 import com.vn.backend.utils.MessageUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -47,6 +45,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ExamServiceImpl Unit Tests")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class ExamServiceImplTest {
 
     @Mock
@@ -96,7 +95,7 @@ class ExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_01: createExam - Thành công")
+    @DisplayName("[TC_EXAM_01] createExam - Thành công")
     void createExam_Success() {
         ExamCreateRequest request = new ExamCreateRequest();
         request.setSubjectId("1");
@@ -111,7 +110,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_02: createExam - Thất bại do không tìm thấy Môn học")
+    @DisplayName("[TC_EXAM_02] createExam - Thất bại do không tìm thấy Môn học")
     void createExam_SubjectNotFound_ThrowsException() {
         ExamCreateRequest request = new ExamCreateRequest();
         request.setSubjectId("99");
@@ -125,7 +124,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_03: searchExam - Thành công với phân trang")
+    @DisplayName("[TC_EXAM_03] searchExam - Thành công với phân trang")
     void searchExam_Success() {
         BaseFilterSearchRequest<ExamSearchRequest> request = new BaseFilterSearchRequest<>();
         request.setFilters(new ExamSearchRequest());
@@ -145,7 +144,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_04: getExam - Thành công")
+    @DisplayName("[TC_EXAM_04] getExam - Thành công")
     void getExam_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(10L, 1L)).thenReturn(Optional.of(existingExam));
@@ -157,7 +156,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_05: getExam - Thất bại khi không tìm thấy đề thi")
+    @DisplayName("[TC_EXAM_05] getExam - Thất bại khi không tìm thấy đề thi")
     void getExam_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -167,7 +166,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_06: updateExam - Thành công")
+    @DisplayName("[TC_EXAM_06] updateExam - Thành công")
     void updateExam_Success() {
         ExamUpdateRequest request = new ExamUpdateRequest();
         request.setSubjectId("1");
@@ -184,7 +183,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_07: updateExam - Thất bại khi đề thi không tồn tại")
+    @DisplayName("[TC_EXAM_07] updateExam - Thất bại khi đề thi không tồn tại")
     void updateExam_ExamNotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -194,7 +193,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_08: updateExam - Thất bại khi Môn học mới không tồn tại")
+    @DisplayName("[TC_EXAM_08] updateExam - Thất bại khi Môn học mới không tồn tại")
     void updateExam_SubjectNotFound_ThrowsException() {
         ExamUpdateRequest request = new ExamUpdateRequest();
         request.setSubjectId("99");
@@ -208,7 +207,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_09: deleteExam - Thành công")
+    @DisplayName("[TC_EXAM_09] deleteExam - Thành công")
     void deleteExam_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(10L, 1L)).thenReturn(Optional.of(existingExam));
@@ -220,7 +219,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_10: deleteExam - Thất bại khi không tìm thấy")
+    @DisplayName("[TC_EXAM_10] deleteExam - Thất bại khi không tìm thấy")
     void deleteExam_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -234,7 +233,7 @@ class ExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_11: addQuestionsToExam - Hỗn hợp (Thêm mới, Cập nhật index, Xóa bỏ)")
+    @DisplayName("[TC_EXAM_11] addQuestionsToExam - Hỗn hợp (Thêm mới, Cập nhật index, Xóa bỏ)")
     void addQuestionsToExam_Mixed_Success() {
         // Mock data
         ExamQuestion oldEq = ExamQuestion.builder().examId(10L).questionId(1L).orderIndex(1).build();
@@ -261,7 +260,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_12: addQuestionsToExam - Thất bại khi đề thi không tồn tại")
+    @DisplayName("[TC_EXAM_12] addQuestionsToExam - Thất bại khi đề thi không tồn tại")
     void addQuestionsToExam_ExamNotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -271,7 +270,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_13: addQuestionsToExam - Thất bại khi Câu hỏi không tồn tại trong hệ thống")
+    @DisplayName("[TC_EXAM_13] addQuestionsToExam - Thất bại khi Câu hỏi không tồn tại trong hệ thống")
     void addQuestionsToExam_QuestionNotFound_ThrowsException() {
         ExamQuestionsCreateRequest r1 = new ExamQuestionsCreateRequest();
         r1.setQuestionId("99");
@@ -286,7 +285,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_14: removeQuestionsFromExam - Thành công")
+    @DisplayName("[TC_EXAM_14] removeQuestionsFromExam - Thành công")
     void removeQuestionsFromExam_Success() {
         ExamQuestionsDeleteRequest req = new ExamQuestionsDeleteRequest();
         req.setExamId("10"); req.setQuestionId("1");
@@ -301,7 +300,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_15: removeQuestionsFromExam - Thất bại khi không tìm thấy quan hệ")
+    @DisplayName("[TC_EXAM_15] removeQuestionsFromExam - Thất bại khi không tìm thấy quan hệ")
     void removeQuestionsFromExam_NotFound_ThrowsException() {
         ExamQuestionsDeleteRequest req = new ExamQuestionsDeleteRequest();
         req.setExamId("10"); req.setQuestionId("99");
@@ -314,7 +313,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_16: updateQuestionInExam - Thành công")
+    @DisplayName("[TC_EXAM_16] updateQuestionInExam - Thành công")
     void updateQuestionInExam_Success() {
         ExamQuestionUpdateRequest request = new ExamQuestionUpdateRequest();
         request.setExamId("10"); request.setQuestionId("1"); request.setOrderIndex("5");
@@ -330,7 +329,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_17: updateQuestionInExam - Thất bại khi không tìm thấy")
+    @DisplayName("[TC_EXAM_17] updateQuestionInExam - Thất bại khi không tìm thấy")
     void updateQuestionInExam_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examQuestionRepository.findByExamIdAndQuestionIdAndExam_CreatedBy(anyLong(), anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -340,7 +339,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_18: searchExamQuestion - Thành công")
+    @DisplayName("[TC_EXAM_18] searchExamQuestion - Thành công")
     void searchExamQuestion_Success() {
         BaseFilterSearchRequest<ExamQuestionsSearchRequest> request = new BaseFilterSearchRequest<>();
         ExamQuestionsSearchRequest filter = new ExamQuestionsSearchRequest();
@@ -364,7 +363,7 @@ class ExamServiceImplTest {
     // ===========================================
 
     @Test
-    @DisplayName("TC_QLT_19: duplicateExam - Thành công")
+    @DisplayName("[TC_EXAM_19] duplicateExam - Thành công")
     void duplicateExam_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(10L, 1L)).thenReturn(Optional.of(existingExam));
@@ -377,7 +376,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_20: duplicateExam - Thất bại khi đề gốc không tồn tại")
+    @DisplayName("[TC_EXAM_20] duplicateExam - Thất bại khi đề gốc không tồn tại")
     void duplicateExam_NotFound_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examRepository.findByExamIdAndCreatedByAndIsDeletedIsFalse(anyLong(), anyLong())).thenReturn(Optional.empty());
@@ -387,7 +386,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_21: getExamStatistic - Thành công")
+    @DisplayName("[TC_EXAM_21] getExamStatistic - Thành công")
     void getExamStatistic_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(examQuestionRepository.countQuestions(10L, 1L)).thenReturn(10L);
@@ -398,7 +397,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_22: searchAvailableQuestions - Thành công")
+    @DisplayName("[TC_EXAM_22] searchAvailableQuestions - Thành công")
     void searchAvailableQuestions_Success() {
         BaseFilterSearchRequest<QuestionAvailableSearchRequest> request = new BaseFilterSearchRequest<>();
         QuestionAvailableSearchRequest filter = new QuestionAvailableSearchRequest();
@@ -420,7 +419,7 @@ class ExamServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_23: addQuestionsToExam - Chỉ thực hiện xóa câu hỏi (Bao phủ nhánh Delete và branches toUpdate/toInsert trống)")
+    @DisplayName("[TC_EXAM_23] addQuestionsToExam - Chỉ thực hiện xóa câu hỏi")
     void addQuestionsToExam_DeleteOnly_Success() {
         // Mock data: Đề thi đang có 1 câu hỏi (ID: 1L)
         ExamQuestion oldEq = ExamQuestion.builder().examId(10L).questionId(1L).orderIndex(1).build();
