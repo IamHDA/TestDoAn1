@@ -208,8 +208,7 @@ class NotificationServiceImplTest {
                 .classroomId(100L)
                 .build();
 
-        Notification savedNotif = new Notification();
-        when(notificationRepository.save(any(Notification.class))).thenReturn(savedNotif);
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> i.getArgument(0));
 
         notificationService.createNotificationForUser(
                 currentUser, 2L, NotificationObjectType.INVITE_CLASS, 1L, invitation
@@ -217,6 +216,60 @@ class NotificationServiceImplTest {
 
         verify(notificationRepository).save(any(Notification.class));
         verify(webSocketService).sendNotificationToUser(eq(2L), any(Notification.class));
+    }
+
+    @Test
+    @DisplayName("createNotificationForUser(Invitation) - return sớm nếy input null")
+    void createNotificationForUser_Invitation_Fail_NullInputs() {
+        notificationService.createNotificationForUser(null, 2L, NotificationObjectType.INVITE_CLASS, 1L, new Invitation());
+        verify(notificationRepository, never()).save(any());
+    }
+
+    // ===================== createNotificationForUser (Classroom) =====================
+
+    @Test
+    @DisplayName("createNotificationForUser(Classroom) - gửi thành công")
+    void createNotificationForUser_Classroom_Success() {
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> i.getArgument(0));
+        notificationService.createNotificationForUser(
+                currentUser, 2L, NotificationObjectType.JOIN_CLASS, 1L, classroom
+        );
+
+        verify(notificationRepository).save(any(Notification.class));
+        verify(webSocketService).sendNotificationToUser(eq(2L), any(Notification.class));
+    }
+
+    @Test
+    @DisplayName("createNotificationForUser(Classroom) - return sớm nếu input null")
+    void createNotificationForUser_Classroom_Fail_NullInputs() {
+        notificationService.createNotificationForUser(currentUser, null, NotificationObjectType.JOIN_CLASS, 1L, classroom);
+        verify(notificationRepository, never()).save(any());
+    }
+
+    // ===================== createNotificationForUser (SessionExam) =====================
+
+    @Test
+    @DisplayName("createNotificationForUser(SessionExam) - gửi thành công")
+    void createNotificationForUser_SessionExam_Success() {
+        SessionExam sessionExam = SessionExam.builder()
+                .title("Midterm Exam")
+                .classId(100L)
+                .build();
+
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> i.getArgument(0));
+        notificationService.createNotificationForUser(
+                currentUser, 2L, NotificationObjectType.EXAM_CREATED, 1L, sessionExam
+        );
+
+        verify(notificationRepository).save(any(Notification.class));
+        verify(webSocketService).sendNotificationToUser(eq(2L), any(Notification.class));
+    }
+
+    @Test
+    @DisplayName("createNotificationForUser(SessionExam) - return sớm nếu input null")
+    void createNotificationForUser_SessionExam_Fail_NullInputs() {
+        notificationService.createNotificationForUser(currentUser, 2L, null, 1L, new SessionExam());
+        verify(notificationRepository, never()).save(any());
     }
 
     // ===================== createNotificationForClass =====================
@@ -243,5 +296,43 @@ class NotificationServiceImplTest {
         verify(webSocketService).sendNotificationToUser(eq(2L), any(Notification.class));
         verify(webSocketService).sendNotificationToUser(eq(3L), any(Notification.class));
         verify(webSocketService).sendNotificationToUser(eq(4L), any(Notification.class));
+    }
+
+    @Test
+    @DisplayName("createNotificationForClass - return sớm nếu input null")
+    void createNotificationForClass_Fail_NullInputs() {
+        notificationService.createNotificationForClass(null, 100L, NotificationObjectType.ANNOUNCEMENT, 1L);
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("createNotificationForClass - ném exception khi không thấy lớp")
+    void createNotificationForClass_ThrowsException_WhenNotFound() {
+        when(classroomRepository.findById(100L)).thenReturn(Optional.empty());
+        when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not found");
+
+        assertThatThrownBy(() -> notificationService.createNotificationForClass(currentUser, 100L, NotificationObjectType.ANNOUNCEMENT, 1L))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("Priority Logic - bao phủ nhánh HIGH, MEDIUM, LOW")
+    void test_PriorityLogic() throws Exception {
+        // Sử dụng reflection để gọi private method getPriorityByNotificationType
+        java.lang.reflect.Method method = NotificationServiceImpl.class.getDeclaredMethod("getPriorityByNotificationType", NotificationObjectType.class);
+        method.setAccessible(true);
+
+        // HIGH
+        assertThat(method.invoke(notificationService, NotificationObjectType.ASSIGNMENT)).isEqualTo(com.vn.backend.enums.NotificationPriority.HIGH);
+        assertThat(method.invoke(notificationService, NotificationObjectType.EXAM_CREATED)).isEqualTo(com.vn.backend.enums.NotificationPriority.HIGH);
+        
+        // MEDIUM
+        assertThat(method.invoke(notificationService, NotificationObjectType.INVITE_CLASS)).isEqualTo(com.vn.backend.enums.NotificationPriority.MEDIUM);
+        assertThat(method.invoke(notificationService, NotificationObjectType.JOIN_CLASS)).isEqualTo(com.vn.backend.enums.NotificationPriority.MEDIUM);
+        assertThat(method.invoke(notificationService, NotificationObjectType.ANNOUNCEMENT)).isEqualTo(com.vn.backend.enums.NotificationPriority.MEDIUM);
+        assertThat(method.invoke(notificationService, NotificationObjectType.MATERIAL)).isEqualTo(com.vn.backend.enums.NotificationPriority.MEDIUM);
+        
+        // LOW (default)
+        assertThat(method.invoke(notificationService, NotificationObjectType.SYSTEM_NOTIFICATION)).isEqualTo(com.vn.backend.enums.NotificationPriority.LOW);
     }
 }
