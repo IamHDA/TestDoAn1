@@ -1,5 +1,6 @@
 package com.vn.backend;
 
+import com.vn.backend.constants.AppConst;
 import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.topic.*;
@@ -125,6 +126,51 @@ class TopicServiceImplTest {
         verify(approvalRequestService).createRequest(eq(RequestType.TOPIC_CREATE), any(), eq(1L), anyList());
     }
 
+    @Test
+    @DisplayName("TC_QLLH_TOP_04A: approvalRequestTopic - nÃ©m lá»—i khi mÃ´n há»c khÃ´ng tá»“n táº¡i")
+    void approvalRequestTopic_SubjectNotFound() {
+        CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
+        request.setSubjectId(999L);
+        request.setTopicRequests(List.of(new CreateTopicRequest()));
+        when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(999L)).thenReturn(false);
+
+        assertThatThrownBy(() -> topicService.approvalRequestTopic(request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_04B: approvalRequestTopic - nÃ©m lá»—i khi danh sÃ¡ch topic rá»—ng")
+    void approvalRequestTopic_EmptyTopicRequests() {
+        CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
+        request.setSubjectId(10L);
+        request.setTopicRequests(Collections.emptyList());
+
+        assertThatThrownBy(() -> topicService.approvalRequestTopic(request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.INVALID_LOGIC_QUESTION);
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_04C: approvalRequestTopic - nÃ©m lá»—i khi topicId tham chiáº¿u khÃ´ng tá»“n táº¡i")
+    void approvalRequestTopic_ExistingTopicNotFound() {
+        CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
+        request.setSubjectId(10L);
+        request.setRequestType(RequestType.TOPIC_CREATE);
+
+        CreateTopicRequest topReq = new CreateTopicRequest();
+        topReq.setTopicId(999L);
+        topReq.setTopicName("Reuse Topic");
+        request.setTopicRequests(List.of(topReq));
+
+        when(approvalRequestItemsRepository.findEntityIdsByPendingRequest(any(), any(), any())).thenReturn(Collections.emptyList());
+        when(topicRepository.findByTopicIdAndIsDeleted(999L, false)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> topicService.approvalRequestTopic(request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
+    }
+
     // ================== updateTopic ==================
     @Test
     @DisplayName("TC_QLLH_TOP_05: updateTopic - ném UNAUTHORIZED nếu không phải ADMIN")
@@ -168,6 +214,31 @@ class TopicServiceImplTest {
         verify(topicRepository).save(existingTopic);
     }
 
+    @Test
+    @DisplayName("TC_QLLH_TOP_07A: updateTopic - nÃ©m lá»—i khi topic khÃ´ng tá»“n táº¡i")
+    void updateTopic_NotFound() {
+        when(topicRepository.findByTopicIdAndIsDeleted(999L, false)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> topicService.updateTopic(999L, new UpdateTopicRequest()))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_07B: updateTopic - nÃ©m lá»—i khi prerequisite khÃ´ng tá»“n táº¡i")
+    void updateTopic_PrerequisiteNotFound() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
+        when(topicRepository.findByTopicIdAndIsDeleted(999L, false)).thenReturn(Optional.empty());
+
+        UpdateTopicRequest request = new UpdateTopicRequest();
+        request.setPrerequisiteTopicId(999L);
+
+        assertThatThrownBy(() -> topicService.updateTopic(100L, request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
+    }
+
     // ================== deleteTopic ==================
     @Test
     @DisplayName("TC_QLLH_TOP_08: deleteTopic - thành công xóa mềm (với quyền Admin)")
@@ -191,6 +262,16 @@ class TopicServiceImplTest {
                 .isInstanceOf(AppException.class);
     }
 
+    @Test
+    @DisplayName("TC_QLLH_TOP_09A: deleteTopic - nÃ©m lá»—i khi topic khÃ´ng tá»“n táº¡i")
+    void deleteTopic_NotFound() {
+        when(topicRepository.findByTopicIdAndIsDeleted(999L, false)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> topicService.deleteTopic(999L))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
+    }
+
     // ================== searchTopic ==================
     @Test
     @DisplayName("TC_QLLH_TOP_10: searchTopics - thành công và lấy đúng data")
@@ -209,5 +290,38 @@ class TopicServiceImplTest {
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().iterator().next().getTopicName()).isEqualTo("Topic 1");
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_11: searchTopics - thÃ nh cÃ´ng khi filters lÃ  null")
+    void searchTopics_NullFilters() {
+        BaseFilterSearchRequest<TopicFilterRequest> req = new BaseFilterSearchRequest<>();
+        req.setFilters(null);
+        req.setPagination(new SearchRequest());
+
+        when(topicRepository.findTopicsBySubjectIdWithSearch(isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(existingTopic)));
+
+        var result = topicService.searchTopics(req);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(topicRepository).findTopicsBySubjectIdWithSearch(isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_12: searchTopics - nÃ©m lá»—i khi subjectId khÃ´ng tá»“n táº¡i")
+    void searchTopics_SubjectNotFound() {
+        TopicFilterRequest filter = new TopicFilterRequest();
+        filter.setSubjectId(999L);
+
+        BaseFilterSearchRequest<TopicFilterRequest> req = new BaseFilterSearchRequest<>();
+        req.setFilters(filter);
+        req.setPagination(new SearchRequest());
+
+        when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(999L)).thenReturn(false);
+
+        assertThatThrownBy(() -> topicService.searchTopics(req))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
     }
 }

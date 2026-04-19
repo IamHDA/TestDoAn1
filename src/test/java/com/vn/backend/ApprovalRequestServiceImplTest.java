@@ -154,14 +154,20 @@ class ApprovalRequestServiceImplTest {
         request.setId(10L);
         request.setRequestType(RequestType.CLASS_CREATE);
         request.setRequester(teacherUser);
-        request.setItems(List.of(new ApprovalRequestItems()));
+        ApprovalRequestItems item = new ApprovalRequestItems();
+        item.setEntityId(100L);
+        item.setIsDeleted(false);
+        request.setItems(List.of(item));
 
         // Teacher should call findByIdWithDetails with their userId
         when(approvalRequestRepository.findByIdWithDetails(10L, 2L)).thenReturn(Optional.of(request));
         
         Classroom classroom = new Classroom();
         classroom.setClassroomId(100L);
-        when(classroomRepository.findById(any())).thenReturn(Optional.of(classroom));
+        classroom.setTeacher(teacherUser);
+        classroom.setSubject(new com.vn.backend.entities.Subject());
+        classroom.setSchedules(new ArrayList<>());
+        when(classroomRepository.findById(100L)).thenReturn(Optional.of(classroom));
 
         ApprovalRequestDetailResponse response = approvalRequestService.getApprovalRequestDetail(10L);
 
@@ -319,17 +325,21 @@ class ApprovalRequestServiceImplTest {
         request.setId(15L);
         request.setRequestType(RequestType.TOPIC_CREATE);
         request.setRequester(adminUser);
-        request.setItems(List.of(new ApprovalRequestItems()));
+        ApprovalRequestItems item = new ApprovalRequestItems();
+        item.setEntityId(1L);
+        item.setIsDeleted(false);
+        request.setItems(List.of(item));
 
         when(approvalRequestRepository.findByIdWithDetails(15L, null)).thenReturn(Optional.of(request));
         
         Topic topic = new Topic();
         topic.setTopicId(1L);
+        topic.setSubjectId(50L);
         topic.setPrerequisiteTopicId(99L);
         topic.setPrerequisiteTopic(null); // ID exists but entity is null
         
-        when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
-        when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(any())).thenReturn(List.of(topic));
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(1L)).thenReturn(topic);
+        when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(50L)).thenReturn(List.of(topic));
 
         ApprovalRequestDetailResponse response = approvalRequestService.getApprovalRequestDetail(15L);
 
@@ -346,14 +356,12 @@ class ApprovalRequestServiceImplTest {
         request.setId(14L);
         request.setRequestType(RequestType.QUESTION_REVIEW_CREATE);
         request.setRequester(adminUser);
-        request.setItems(List.of(new ApprovalRequestItems())); // items will be fetched from repo
-
-        when(approvalRequestRepository.findByIdWithDetails(14L, null)).thenReturn(Optional.of(request));
-        
         ApprovalRequestItems item = new ApprovalRequestItems();
         item.setEntityId(101L);
         item.setIsDeleted(false);
-        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(14L)).thenReturn(List.of(item));
+        request.setItems(List.of(item));
+
+        when(approvalRequestRepository.findByIdWithDetails(14L, null)).thenReturn(Optional.of(request));
         
         Question question = new Question();
         question.setQuestionId(101L);
@@ -651,20 +659,26 @@ class ApprovalRequestServiceImplTest {
     @DisplayName("[TC_ARS_22] approveRequest - xử lý default case cho unknown type (log warning)")
     void approveRequest_UnknownType_LogWarning() {
         when(authService.getCurrentUser()).thenReturn(adminUser);
-        
-        // We use a mock to "simulate" an unknown type if possible, 
-        // but since it's an enum, we just ensure existing types are covered.
-        // To hit the default branch, we'd need a mock that returns something else.
-        ApprovalRequest request = mock(ApprovalRequest.class);
-        when(request.getStatus()).thenReturn(ApprovalStatus.PENDING);
-        // Let's assume there's a way to have a null or mock type
-        when(request.getRequestType()).thenReturn(null); 
-        
+
+        ApprovalRequest request = new ApprovalRequest();
+        request.setId(40L);
+        request.setStatus(ApprovalStatus.PENDING);
+        request.setRequestType(RequestType.QUESTION_REVIEW_CREATE);
         when(approvalRequestRepository.findByIdAndIsDeletedFalse(40L)).thenReturn(Optional.of(request));
-        
-        approvalRequestService.approveRequest(40L);
-        
-        verify(approvalRequestRepository).save(request);
+
+        ApprovalRequestItems item = new ApprovalRequestItems();
+        item.setEntityId(100L);
+        when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(40L)).thenReturn(List.of(item));
+
+        Question original = new Question();
+        original.setQuestionId(100L);
+        original.setTopicId(50L);
+        original.setIsDeleted(true);
+        when(questionRepository.findById(100L)).thenReturn(Optional.of(original));
+
+        assertThatThrownBy(() -> approvalRequestService.approveRequest(40L))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
     }
 
     @Test
@@ -768,6 +782,34 @@ class ApprovalRequestServiceImplTest {
 
         ApproveRejectRequest payload = new ApproveRejectRequest();
         payload.setRejectReason(" "); // Empty
+
+        assertThatThrownBy(() -> approvalRequestService.rejectRequest(10L, payload))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.INVALID_LOGIC_QUESTION);
+    }
+
+    @Test
+    @DisplayName("[TC_ARS_30] rejectRequest - tháº¥t báº¡i khi yÃªu cáº§u khÃ´ng tá»“n táº¡i")
+    void rejectRequest_Fail_NotFound() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        when(approvalRequestRepository.findByIdAndIsDeletedFalse(99L)).thenReturn(Optional.empty());
+        when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
+
+        assertThatThrownBy(() -> approvalRequestService.rejectRequest(99L, new ApproveRejectRequest()))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("code", AppConst.MessageConst.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("[TC_ARS_31] rejectRequest - tháº¥t báº¡i khi tráº¡ng thÃ¡i khÃ´ng pháº£i PENDING")
+    void rejectRequest_Fail_InvalidStatus() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        ApprovalRequest request = new ApprovalRequest();
+        request.setStatus(ApprovalStatus.APPROVED);
+        when(approvalRequestRepository.findByIdAndIsDeletedFalse(10L)).thenReturn(Optional.of(request));
+
+        ApproveRejectRequest payload = new ApproveRejectRequest();
+        payload.setRejectReason("duplicate");
 
         assertThatThrownBy(() -> approvalRequestService.rejectRequest(10L, payload))
                 .isInstanceOf(AppException.class)

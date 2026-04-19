@@ -539,7 +539,7 @@ class UserServiceImplTest {
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("FULL_NAME không được để trống")
                 .hasMessageContaining("EMAIL không được để trống")
-                .hasMessageContaining("ROLE không được để trống");
+                .hasMessageContaining("Role không hợp lệ (INVALID_ROLE)");
     }
 
     @Test
@@ -632,7 +632,7 @@ class UserServiceImplTest {
         java.util.List<String[]> rows = new java.util.ArrayList<>();
         // Tên có ký tự đặc biệt, dấu tiếng Việt phức tạp để check removeDiacritics và toBaseUser
         rows.add(new String[]{"1", "Đặng Văn @#$ %^&* ( ) _ + =", "SPEC01", "spec@test.com", "", "01/01/1990", "", "", "STUDENT"});
-        rows.add(new String[]{"2", "   ", "SPACE01", "space@test.com", "", "01/01/1990", "", "", "STUDENT"}); // Tên chỉ có khoảng trắng
+        rows.add(new String[]{"2", "---", "SPACE01", "space@test.com", "", "01/01/1990", "", "", "STUDENT"}); // Tên khó chuẩn hóa
         byte[] excelBytes = createMockUserExcel(rows);
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes);
 
