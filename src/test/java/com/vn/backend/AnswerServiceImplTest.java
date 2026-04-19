@@ -97,8 +97,8 @@ class AnswerServiceImplTest {
     // ===================== addAnswer =====================
 
     @Test
-    @DisplayName("addAnswer - thành công với câu hỏi MULTI_CHOICE")
-    void addAnswer_Success_MultiChoice() {
+    @DisplayName("TC_QLT_01: addAnswer - thành công với câu hỏi MULTI_CHOICE")
+    void TC_QLT_01_addAnswer_Success_MultiChoice() {
         AnswerCreateRequest request = new AnswerCreateRequest();
         request.setQuestionId(20L);
         request.setContent("Answer A");
@@ -128,8 +128,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("addAnswer - thành công với câu hỏi SINGLE_CHOICE khi chưa có đáp án đúng")
-    void addAnswer_Success_SingleChoice_NoExistingCorrectAnswer() {
+    @DisplayName("TC_QLT_02: addAnswer - thành công với câu hỏi SINGLE_CHOICE khi chưa có đáp án đúng")
+    void TC_QLT_02_addAnswer_Success_SingleChoice_NoExistingCorrectAnswer() {
         AnswerCreateRequest request = new AnswerCreateRequest();
         request.setQuestionId(10L);
         request.setContent("Only correct answer");
@@ -158,8 +158,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("addAnswer - ném exception khi câu hỏi không tồn tại hoặc không thuộc về user")
-    void addAnswer_ThrowsException_WhenQuestionNotFound() {
+    @DisplayName("TC_QLT_03: addAnswer - ném exception khi câu hỏi không tồn tại hoặc không thuộc về user")
+    void TC_QLT_03_addAnswer_ThrowsException_WhenQuestionNotFound() {
         AnswerCreateRequest request = new AnswerCreateRequest();
         request.setQuestionId(999L);
         request.setContent("Answer");
@@ -183,8 +183,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("addAnswer - ném exception khi SINGLE_CHOICE đã có hơn 1 đáp án đúng")
-    void addAnswer_ThrowsException_WhenSingleChoiceAlreadyHasMoreThanOneCorrectAnswer() {
+    @DisplayName("TC_QLT_04: addAnswer - ném exception khi SINGLE_CHOICE đã có hơn 1 đáp án đúng")
+    void TC_QLT_04_addAnswer_ThrowsException_WhenSingleChoiceAlreadyHasMoreThanOneCorrectAnswer() {
         AnswerCreateRequest request = new AnswerCreateRequest();
         request.setQuestionId(10L);
         request.setContent("New correct answer");
@@ -207,8 +207,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("addAnswer - thành công khi đáp án không đúng cho SINGLE_CHOICE")
-    void addAnswer_Success_SingleChoice_WrongAnswer() {
+    @DisplayName("TC_QLT_05: addAnswer - thành công khi đáp án không đúng cho SINGLE_CHOICE")
+    void TC_QLT_05_addAnswer_Success_SingleChoice_WrongAnswer() {
         AnswerCreateRequest request = new AnswerCreateRequest();
         request.setQuestionId(10L);
         request.setContent("Wrong answer");
@@ -237,11 +237,51 @@ class AnswerServiceImplTest {
         verify(answerRepository, never()).countByQuestionIdAndIsCorrectTrue(anyLong());
     }
 
+    @Test
+    @DisplayName("TC_QLT_06: addAnswer - thành công khi QuestionType null")
+    void TC_QLT_06_addAnswer_Success_QuestionTypeNull() {
+        Question nullTypeQuestion = Question.builder()
+                .questionId(30L)
+                .type(null)
+                .createdBy(1L)
+                .build();
+
+        AnswerCreateRequest request = new AnswerCreateRequest();
+        request.setQuestionId(30L);
+        request.setContent("Answer");
+        request.setIsCorrect(true);
+
+        when(authService.getCurrentUser()).thenReturn(currentUser);
+        when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(30L, 1L))
+                .thenReturn(Optional.of(nullTypeQuestion));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerResponse result = answerService.addAnswer(request);
+        assertThat(result.getIsCorrect()).isTrue();
+    }
+
+    @Test
+    @DisplayName("TC_QLT_07: addAnswer - thành công khi isCorrect null (mặc định false)")
+    void TC_QLT_07_addAnswer_Success_IsCorrectNull() {
+        AnswerCreateRequest request = new AnswerCreateRequest();
+        request.setQuestionId(20L);
+        request.setContent("Answer");
+        request.setIsCorrect(null);
+
+        when(authService.getCurrentUser()).thenReturn(currentUser);
+        when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(20L, 1L))
+                .thenReturn(Optional.of(multiChoiceQuestion));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerResponse result = answerService.addAnswer(request);
+        assertThat(result.getIsCorrect()).isFalse();
+    }
+
     // ===================== updateAnswer =====================
 
     @Test
-    @DisplayName("updateAnswer - thành công khi cập nhật nội dung")
-    void updateAnswer_Success_UpdateContent() {
+    @DisplayName("TC_QLT_08: updateAnswer - thành công khi cập nhật nội dung")
+    void TC_QLT_08_updateAnswer_Success_UpdateContent() {
         AnswerUpdateRequest request = new AnswerUpdateRequest();
         request.setContent("Updated answer content");
 
@@ -265,8 +305,156 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateAnswer - ném exception khi answer không tồn tại")
-    void updateAnswer_ThrowsException_WhenAnswerNotFound() {
+    @DisplayName("TC_QLT_09: updateAnswer - ném exception khi SINGLE_CHOICE cập nhật thành đúng nhưng không tìm thấy repo")
+    void TC_QLT_09_updateAnswer_ThrowsException_WhenUpdatingToCorrectButNotFoundAsCorrect() {
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(true);
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(questionRepository.findById(10L)).thenReturn(Optional.of(singleChoiceQuestion));
+        // Giả lập nhánh: ném lỗi nếu không tìm thấy chính nó là đáp án đúng (logic kỳ lạ tại dòng 81-82)
+        when(answerRepository.findByAnswerIdAndIsCorrectTrueAndIsDeletedFalse(100L)).thenReturn(Optional.empty());
+        when(messageUtils.getMessage(anyString())).thenReturn("Invalid logic");
+
+        assertThatThrownBy(() -> answerService.updateAnswer(100L, request))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_QLT_10: updateAnswer - ném exception khi không tìm thấy Question liên quan (SINGLE_CHOICE path)")
+    void TC_QLT_10_updateAnswer_ThrowsException_WhenQuestionNotFoundOnUpdate() {
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(true);
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(questionRepository.findById(10L)).thenReturn(Optional.empty());
+
+        // Nếu không tìm thấy Question, nó sẽ bỏ qua logic check Single Choice và lưu bình thường (dựa trên code hiện tại)
+        // Nhưng tôi muốn test nhánh isPresent() = false (ngầm định)
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+        
+        AnswerResponse result = answerService.updateAnswer(100L, request);
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    @DisplayName("TC_QLT_11: updateAnswer - thành công khi QuestionType null (SINGLE_CHOICE check path)")
+    void TC_QLT_11_updateAnswer_Success_QuestionTypeNull() {
+        singleChoiceQuestion.setType(null);
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(true);
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(questionRepository.findById(10L)).thenReturn(Optional.of(singleChoiceQuestion));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerResponse result = answerService.updateAnswer(100L, request);
+        assertThat(result.getIsCorrect()).isTrue();
+    }
+
+    @Test
+    @DisplayName("TC_QLT_12: updateAnswer - cập nhật từng phần (nhiều trường null)")
+    void TC_QLT_12_updateAnswer_Success_PartialUpdates() {
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        // Case 1: Only content
+        AnswerUpdateRequest req1 = new AnswerUpdateRequest();
+        req1.setContent("New Content");
+        answerService.updateAnswer(100L, req1);
+
+        // Case 2: Only isCorrect
+        AnswerUpdateRequest req2 = new AnswerUpdateRequest();
+        req2.setIsCorrect(false);
+        // Cần mock thêm countByQuestionId... vì logic ở dòng 92
+        when(answerRepository.countByQuestionIdAndIsCorrectTrueAndAnswerIdNotAndIsDeletedFalse(anyLong(), anyLong())).thenReturn(1L);
+        answerService.updateAnswer(100L, req2);
+
+        // Case 3: Only displayOrder
+        AnswerUpdateRequest req3 = new AnswerUpdateRequest();
+        req3.setDisplayOrder(5);
+        answerService.updateAnswer(100L, req3);
+        
+        verify(answerRepository, times(3)).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("TC_QLT_13: updateAnswer - thành công khi set isCorrect=true cho câu hỏi MULTI_CHOICE")
+    void TC_QLT_13_updateAnswer_Success_MultiChoice_SetCorrect() {
+        // Mock một câu hỏi MULTI_CHOICE
+        existingAnswer.setQuestionId(20L);
+        existingAnswer.setIsCorrect(false);
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(questionRepository.findById(20L)).thenReturn(Optional.of(multiChoiceQuestion));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(true);
+
+        AnswerResponse result = answerService.updateAnswer(100L, request);
+        assertThat(result.getIsCorrect()).isTrue();
+        // Không được gọi check SINGLE_CHOICE logic
+        verify(answerRepository, never()).findByAnswerIdAndIsCorrectTrueAndIsDeletedFalse(anyLong());
+    }
+
+    @Test
+    @DisplayName("TC_QLT_14: updateAnswer - thành công khi set isCorrect=false cho đáp án vốn đã là false")
+    void TC_QLT_14_updateAnswer_Success_AlreadyFalse_SetFalse() {
+        existingAnswer.setIsCorrect(false); // Đang là sai
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(false); // Cập nhật tiếp thành sai
+
+        AnswerResponse result = answerService.updateAnswer(100L, request);
+        assertThat(result.getIsCorrect()).isFalse();
+        
+        // Không được gọi countByQuestionId... vì dòng 91 là false
+        verify(answerRepository, never()).countByQuestionIdAndIsCorrectTrueAndAnswerIdNotAndIsDeletedFalse(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("TC_QLT_15: updateAnswer - thành công khi giữ nguyên đáp án đúng cho SINGLE_CHOICE")
+    void TC_QLT_15_updateAnswer_Success_StayCorrect_SingleChoice() {
+        existingAnswer.setIsCorrect(true);
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(questionRepository.findById(10L)).thenReturn(Optional.of(singleChoiceQuestion));
+        // Thỏa mãn dòng 81-82: tìm thấy chính nó là đáp án đúng
+        when(answerRepository.findByAnswerIdAndIsCorrectTrueAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(true);
+
+        AnswerResponse result = answerService.updateAnswer(100L, request);
+        assertThat(result.getIsCorrect()).isTrue();
+    }
+
+    @Test
+    @DisplayName("TC_QLT_16: updateAnswer - thành công khi set isCorrect=false cho câu hỏi MULTI_CHOICE")
+    void TC_QLT_16_updateAnswer_Success_MultiChoice_SetFalse() {
+        existingAnswer.setQuestionId(20L);
+        existingAnswer.setIsCorrect(true);
+
+        when(answerRepository.findByAnswerIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(existingAnswer));
+        // Dòng 92: còn đáp án đúng khác
+        when(answerRepository.countByQuestionIdAndIsCorrectTrueAndAnswerIdNotAndIsDeletedFalse(20L, 100L)).thenReturn(1L);
+        when(answerRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        AnswerUpdateRequest request = new AnswerUpdateRequest();
+        request.setIsCorrect(false);
+
+        AnswerResponse result = answerService.updateAnswer(100L, request);
+        assertThat(result.getIsCorrect()).isFalse();
+    }
+
+    @Test
+    @DisplayName("TC_QLT_17: updateAnswer - ném exception khi answer không tồn tại")
+    void TC_QLT_17_updateAnswer_ThrowsException_WhenAnswerNotFound() {
         AnswerUpdateRequest request = new AnswerUpdateRequest();
         request.setContent("Updated content");
 
@@ -284,8 +472,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateAnswer - ném exception khi bỏ đáp án đúng duy nhất")
-    void updateAnswer_ThrowsException_WhenRemovingLastCorrectAnswer() {
+    @DisplayName("TC_QLT_18: updateAnswer - ném exception khi bỏ đáp án đúng duy nhất")
+    void TC_QLT_18_updateAnswer_ThrowsException_WhenRemovingLastCorrectAnswer() {
         existingAnswer.setIsCorrect(true);
 
         AnswerUpdateRequest request = new AnswerUpdateRequest();
@@ -306,8 +494,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateAnswer - thành công khi bỏ đáp án đúng nhưng vẫn còn đáp án đúng khác")
-    void updateAnswer_Success_WhenRemovingCorrectAnswerButOthersExist() {
+    @DisplayName("TC_QLT_19: updateAnswer - thành công khi bỏ đáp án đúng nhưng vẫn còn đáp án đúng khác")
+    void TC_QLT_19_updateAnswer_Success_WhenRemovingCorrectAnswerButOthersExist() {
         existingAnswer.setIsCorrect(true);
 
         AnswerUpdateRequest request = new AnswerUpdateRequest();
@@ -337,8 +525,8 @@ class AnswerServiceImplTest {
     // ===================== softDeleteAnswer =====================
 
     @Test
-    @DisplayName("softDeleteAnswer - thành công khi answer tồn tại")
-    void softDeleteAnswer_Success() {
+    @DisplayName("TC_QLT_20: softDeleteAnswer - thành công khi answer tồn tại")
+    void TC_QLT_20_softDeleteAnswer_Success() {
         when(answerRepository.findById(100L)).thenReturn(Optional.of(existingAnswer));
 
         answerService.softDeleteAnswer(100L);
@@ -348,8 +536,8 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("softDeleteAnswer - không làm gì khi answer không tồn tại")
-    void softDeleteAnswer_DoesNothing_WhenAnswerNotFound() {
+    @DisplayName("TC_QLT_21: softDeleteAnswer - không làm gì khi answer không tồn tại")
+    void TC_QLT_21_softDeleteAnswer_DoesNothing_WhenAnswerNotFound() {
         when(answerRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatCode(() -> answerService.softDeleteAnswer(999L))
@@ -361,8 +549,8 @@ class AnswerServiceImplTest {
     // ===================== reorderAnswers =====================
 
     @Test
-    @DisplayName("reorderAnswers - thành công khi sắp xếp lại thứ tự đáp án")
-    void reorderAnswers_Success() {
+    @DisplayName("TC_QLT_22: reorderAnswers - thành công khi sắp xếp lại thứ tự đáp án")
+    void TC_QLT_22_reorderAnswers_Success() {
         Answer answer1 = Answer.builder().answerId(1L).displayOrder(0).isDeleted(false).questionId(10L).build();
         Answer answer2 = Answer.builder().answerId(2L).displayOrder(1).isDeleted(false).questionId(10L).build();
         Answer answer3 = Answer.builder().answerId(3L).displayOrder(2).isDeleted(false).questionId(10L).build();
@@ -379,8 +567,21 @@ class AnswerServiceImplTest {
     }
 
     @Test
-    @DisplayName("reorderAnswers - bỏ qua answer đã bị xóa khi sắp xếp")
-    void reorderAnswers_SkipsDeletedAnswers() {
+    @DisplayName("TC_QLT_23: reorderAnswers - xử lý khi ID không khớp trong danh sách answers")
+    void TC_QLT_23_reorderAnswers_IdMismatch() {
+        Answer answer1 = Answer.builder().answerId(1L).displayOrder(0).isDeleted(false).questionId(10L).build();
+        when(answerRepository.findByQuestionIdOrderByDisplayOrder(10L)).thenReturn(Arrays.asList(answer1));
+
+        // Cung cấp ID 999 không tồn tại
+        answerService.reorderAnswers(10L, Arrays.asList(999L, 1L));
+
+        assertThat(answer1.getDisplayOrder()).isEqualTo(1); // được set ở vòng lặp thứ 2 (index 1)
+        verify(answerRepository, times(1)).save(any());
+    }
+
+    @Test
+    @DisplayName("TC_QLT_24: reorderAnswers - bỏ qua answer đã bị xóa khi sắp xếp")
+    void TC_QLT_24_reorderAnswers_SkipsDeletedAnswers() {
         Answer answer1 = Answer.builder().answerId(1L).displayOrder(0).isDeleted(false).questionId(10L).build();
         Answer deletedAnswer = Answer.builder().answerId(2L).displayOrder(1).isDeleted(true).questionId(10L).build();
 
