@@ -1,0 +1,146 @@
+﻿Test Case ID,Tên Tệp/Lớp,Test Objective,Input,Expected Output,Notes
+TC_ANNOUNCEMENT_01,AnnouncementServiceImplTest,createAnnouncement - thành công khi giáo viên đăng,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANNOUNCEMENT_02,AnnouncementServiceImplTest,createAnnouncement - ném exception khi học sinh đăng nhưng setting bị tắt,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANNOUNCEMENT_03,AnnouncementServiceImplTest,createAnnouncement - ném exception khi role khác TEACHER mà tạo tài liệu,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANNOUNCEMENT_04,AnnouncementServiceImplTest,getAnnouncementDetail - thành công lấy thông tin chi tiết,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANNOUNCEMENT_05,AnnouncementServiceImplTest,updateAnnouncement - thành công khi teacher cập nhật,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANNOUNCEMENT_06,AnnouncementServiceImplTest,deleteAnnouncement - ném lỗi Forbidden khi học sinh không phải chủ xóa,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANNOUNCEMENT_07,AnnouncementServiceImplTest,deleteAnnouncement - thành công khi soft delete,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_01,AnswerServiceImplTest,addAnswer - thành công với câu hỏi MULTI_CHOICE,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_02,AnswerServiceImplTest,addAnswer - thành công với câu hỏi SINGLE_CHOICE khi chưa có đáp án đúng,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_03,AnswerServiceImplTest,addAnswer - ném exception khi câu hỏi không tồn tại hoặc không thuộc về user,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_04,AnswerServiceImplTest,addAnswer - ném exception khi SINGLE_CHOICE đã có hơn 1 đáp án đúng,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_05,AnswerServiceImplTest,addAnswer - thành công khi đáp án không đúng cho SINGLE_CHOICE,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_06,AnswerServiceImplTest,updateAnswer - thành công khi cập nhật nội dung,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_07,AnswerServiceImplTest,updateAnswer - ném exception khi answer không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_08,AnswerServiceImplTest,updateAnswer - ném exception khi bỏ đáp án đúng duy nhất,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_09,AnswerServiceImplTest,updateAnswer - thành công khi bỏ đáp án đúng nhưng vẫn còn đáp án đúng khác,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_10,AnswerServiceImplTest,softDeleteAnswer - thành công khi answer tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_11,AnswerServiceImplTest,softDeleteAnswer - không làm gì khi answer không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_12,AnswerServiceImplTest,reorderAnswers - thành công khi sắp xếp lại thứ tự đáp án,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ANSWER_13,AnswerServiceImplTest,reorderAnswers - bỏ qua answer đã bị xóa khi sắp xếp,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_APPROVALREQUEST_01,ApprovalRequestServiceImplTest,createRequest - thành công tạo request mới và các items liên quan,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_APPROVALREQUEST_02,ApprovalRequestServiceImplTest,getApprovalRequestDetail - thành công lấy thông tin cho CLASS_CREATE,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_APPROVALREQUEST_03,ApprovalRequestServiceImplTest,approveRequest - CLASS_CREATE thành công khi user là ADMIN,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_APPROVALREQUEST_04,ApprovalRequestServiceImplTest,"approveRequest - TOPIC_CREATE thay đổi status thành APPROVED, active topic và đổi prereqs",Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_APPROVALREQUEST_05,ApprovalRequestServiceImplTest,approveRequest - ném exception khi user không phải ADMIN,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_APPROVALREQUEST_06,ApprovalRequestServiceImplTest,rejectRequest - thành công set reject và lý do khi ADMIN thao tác,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ASSIGNMENT_01,AssignmentServiceImplTest,createAssignment - thành công tạo assignment và thông báo,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ASSIGNMENT_02,AssignmentServiceImplTest,getAssignmentDetail - thành công lấy thông tin assignment,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ASSIGNMENT_03,AssignmentServiceImplTest,getAssignmentList - trả về danh sách có phân trang,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ASSIGNMENT_04,AssignmentServiceImplTest,addAssignee - thành công thiết lập student,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_ASSIGNMENT_05,AssignmentServiceImplTest,softDeleteAssignment - đổi cờ deleted của assignment và announcement thành true,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_01,AuthServiceImplTest,getCurrentUser - thành công khi đã xác thực,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_02,AuthServiceImplTest,getCurrentUser - ném exception khi chưa xác thực (authentication null),Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_03,AuthServiceImplTest,getCurrentUser - ném exception khi authentication không authenticated,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_04,AuthServiceImplTest,getCurrentUser - ném exception khi user không tồn tại trong DB,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_05,AuthServiceImplTest,login - thành công với thông tin hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_06,AuthServiceImplTest,login - ném exception khi user không tìm thấy sau khi xác thực,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_07,AuthServiceImplTest,getCurrentUserInfo - thành công khi user hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_08,AuthServiceImplTest,"logout - thành công, revoke tất cả token và clear context",Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_09,AuthServiceImplTest,refreshToken - thành công với refresh token hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_10,AuthServiceImplTest,refreshToken - ném exception khi refresh token không hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_11,AuthServiceImplTest,refreshToken - ném exception khi không tìm thấy refresh token trong DB,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_AUTH_12,AuthServiceImplTest,refreshToken - ném exception khi refresh token đã hết hạn,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_01,ClassroomServiceImplTest,getDetailClassroom - thành công khi lớp tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_02,ClassroomServiceImplTest,getDetailClassroom - ném exception khi lớp không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_03,ClassroomServiceImplTest,getClassroomHeader - thành công khi lớp tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_04,ClassroomServiceImplTest,getClassroomHeader - ném exception khi lớp không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_05,ClassroomServiceImplTest,resetClassCode - thành công khi giáo viên reset mã lớp,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_06,ClassroomServiceImplTest,resetClassCode - ném exception khi lớp không tồn tại hoặc không phải giáo viên,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_07,ClassroomServiceImplTest,updateClassMemberStatus - ném exception khi không phải giáo viên của lớp,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_08,ClassroomServiceImplTest,updateClassMemberStatus - ném exception khi thành viên không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_CLASSROOM_09,ClassroomServiceImplTest,getDetailClassroomSetting - ném exception khi setting lớp không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_COMMENT_01,CommentServiceImplTest,createComment - thành công khi user là member hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_COMMENT_02,CommentServiceImplTest,createComment - ném exception khi announcement không cho phép comment,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_COMMENT_03,CommentServiceImplTest,updateComment - thành công khi user là tác giả comment,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_COMMENT_04,CommentServiceImplTest,updateComment - ném exception khi user không phải tác giả (permission denied),Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_COMMENT_05,CommentServiceImplTest,deleteComment - thành công khi user là teacher của lớp,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_COMMENT_06,CommentServiceImplTest,deleteComment - thành công khi user là assistant và xóa comment của student,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EMAIL_01,EmailServiceImplTest,sendExamEmail - thành công tạo và gửi email,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EMAIL_02,EmailServiceImplTest,sendExamEmail - thử nghiệm với sessionExam không có classroom,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EMAIL_03,EmailServiceImplTest,sendAssignmentCreatedEmail - thành công gửi email cho danh sách sinh viên,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EMAIL_04,EmailServiceImplTest,sendReminderEmail - thành công gửi email nhắc nhở bài tập,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EMAIL_05,EmailServiceImplTest,sendExamReminderEmail - thành công gửi email nhắc nhở bài thi,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAMQUESTIONSNAPSHOT_01,ExamQuestionSnapshotServiceImplTest,createExamQuestionSnapshots - thành công tạo snapshot từ danh sách câu hỏi,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAMQUESTIONSNAPSHOT_02,ExamQuestionSnapshotServiceImplTest,createExamQuestionSnapshots - ném exception khi đề thi trống,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAMQUESTIONSNAPSHOT_03,ExamQuestionSnapshotServiceImplTest,getAllQuestions - thành công lấy danh sách snapshot theo thứ tự SEQUENTIAL,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_01,ExamServiceImplTest,getExam - thành công khi exam tồn tại và thuộc về user,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_02,ExamServiceImplTest,getExam - ném exception khi exam không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_03,ExamServiceImplTest,deleteExam - thành công khi soft delete exam,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_04,ExamServiceImplTest,deleteExam - ném exception khi exam không tìm thấy,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_05,ExamServiceImplTest,"duplicateExam - thành công, tạo exam mới với COPY suffix",Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_06,ExamServiceImplTest,duplicateExam - ném exception khi exam gốc không tìm thấy,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_EXAM_07,ExamServiceImplTest,"getExamStatistic - thành công, trả về thống kê câu hỏi",Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_FILE_01,FileServiceImplTest,handleUploadFiles - ném exception khi file trống,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_FILE_02,FileServiceImplTest,handleUploadFiles - ném exception khi đuôi file không hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_FILE_03,FileServiceImplTest,handleUploadFiles - thành công với thẻ ảnh,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_FILE_04,FileServiceImplTest,downloadFile - ném exception khi tên file không tồn tại trong DB,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_FILE_05,FileServiceImplTest,downloadFile - ném exception khi file vật lý không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_FILE_06,FileServiceImplTest,downloadFile - thành công khi file vật lý tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_LEARNINGPATH_01,LearningPathServiceImplTest,getLearningPath - thành công tạo learning path với trạng thái mastery chính xác,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_LEARNINGPATH_02,LearningPathServiceImplTest,getLearningPath - ném exception khi subject không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_LEARNINGPATH_03,LearningPathServiceImplTest,getMasteryProgress - lấy tiến độ học tập thành công,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_01,NotificationServiceImplTest,countUnreadNotification - trả về số lượng chính xác,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_02,NotificationServiceImplTest,searchNotification - trả về danh sách phân trang thành công,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_03,NotificationServiceImplTest,updateIsReadNotification - đánh dấu đã đọc thành công,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_04,NotificationServiceImplTest,updateIsReadNotification - ném exception khi notification không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_05,NotificationServiceImplTest,readAllNotification - đánh dấu đọc toàn bộ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_06,NotificationServiceImplTest,createNotificationForUser(Invitation) - gửi websocket thành công,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_NOTIFICATION_07,NotificationServiceImplTest,createNotificationForClass - gửi đến tất cả thành viên (trừ sender),Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_QUESTION_01,QuestionServiceImplTest,createQuestion - thành công khi payload hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_QUESTION_02,QuestionServiceImplTest,createQuestion - ném lỗi khi SINGLE_CHOICE có nhiều đáp án đúng,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_QUESTION_03,QuestionServiceImplTest,searchQuestions - quyền ADMIN thì không xét userId trong query,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_QUESTION_04,QuestionServiceImplTest,updateQuestion - thành công cập nhật khi là owner,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_QUESTION_05,QuestionServiceImplTest,createApprovalQuestion - thành công gọi ApprovalRequestService,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_01,RedisServiceImplTest,set - thành công gọi opsForValue().set,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_02,RedisServiceImplTest,get - thành công trả về giá trị từ opsForValue().get,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_03,RedisServiceImplTest,delete - thành công gọi redisTemplate.delete,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_04,RedisServiceImplTest,hSet - thành công gọi opsForHash().put,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_05,RedisServiceImplTest,hGet - thành công trả về giá trị từ opsForHash().get,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_06,RedisServiceImplTest,sAdd - thành công gọi opsForSet().add,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_REDIS_07,RedisServiceImplTest,expire - thành công gọi redisTemplate.expire,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_STUDENTSESSIONEXAM_01,StudentSessionExamServiceImplTest,addStudents - thành công thêm sinh viên vào ca thi,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_STUDENTSESSIONEXAM_02,StudentSessionExamServiceImplTest,removeStudent - ném exception khi sinh viên đã bắt đầu làm bài,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_STUDENTSESSIONEXAM_03,StudentSessionExamServiceImplTest,removeStudent - thành công xóa sinh viên chưa tham gia thi,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_01,SubjectServiceImplTest,createSubject - thành công khi mã môn học chưa tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_02,SubjectServiceImplTest,createSubject - ném exception khi mã môn học đã tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_03,SubjectServiceImplTest,updateSubject - thành công khi cập nhật tên môn học,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_04,SubjectServiceImplTest,updateSubject - thành công khi đổi mã môn học sang mã chưa tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_05,SubjectServiceImplTest,updateSubject - ném exception khi mã môn học mới đã tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_06,SubjectServiceImplTest,updateSubject - ném exception khi môn học không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_07,SubjectServiceImplTest,updateSubject - giữ nguyên mã khi request code giống mã cũ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_08,SubjectServiceImplTest,deleteSubject - thành công khi môn học tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_09,SubjectServiceImplTest,deleteSubject - ném exception khi môn học không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBJECT_10,SubjectServiceImplTest,deleteSubject - đặt isDeleted = true (soft delete),Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBMISSION_01,SubmissionServiceImplTest,getDetailSubmission - thành công lấy thông tin bài nộp khi có quyền,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBMISSION_02,SubmissionServiceImplTest,getDetailSubmission - bị cấm khi không có quyền,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBMISSION_03,SubmissionServiceImplTest,createDefaultSubmissions - thành công khởi tạo submission cho các active student,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBMISSION_04,SubmissionServiceImplTest,addAttachmentToSubmission - nộp bài đúng hạn,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBMISSION_05,SubmissionServiceImplTest,addAttachmentToSubmission - ném lỗi khi nộp bài trễ hạn và submission bị đóng,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_SUBMISSION_06,SubmissionServiceImplTest,markSubmission - giáo viên chấm điểm thành công,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_01,TopicServiceImplTest,approvalRequestTopic - ném exception khi user không phải TEACHER,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_02,TopicServiceImplTest,approvalRequestTopic - ném exception khi Subject không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_03,TopicServiceImplTest,approvalRequestTopic - ném exception khi topicRequests trống,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_04,TopicServiceImplTest,approvalRequestTopic - thành công,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_05,TopicServiceImplTest,updateTopic - thành công khi user là ADMIN,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_06,TopicServiceImplTest,updateTopic - ném exception khi user không phải ADMIN,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_07,TopicServiceImplTest,updateTopic - ném exception khi set topic tự làm prerequisite của chính nó,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_08,TopicServiceImplTest,deleteTopic - thành công (soft delete) khi user là ADMIN,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_TOPIC_09,TopicServiceImplTest,deleteTopic - ném exception khi user không phải ADMIN,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_01,UserServiceImplTest,createUser - thành công khi thông tin hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_02,UserServiceImplTest,createUser - ném exception khi username đã tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_03,UserServiceImplTest,createUser - ném exception khi email đã tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_04,UserServiceImplTest,createUser - ném exception khi code đã tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_05,UserServiceImplTest,updateUser - thành công khi cập nhật thông tin hợp lệ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_06,UserServiceImplTest,updateUser - ném exception khi user không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_07,UserServiceImplTest,updateUser - ném exception khi đổi username thành username đã tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_08,UserServiceImplTest,updateUser - thành công khi giữ nguyên username cũ,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_09,UserServiceImplTest,updateUser - cập nhật password được encode,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_10,UserServiceImplTest,updateUserStatus - thành công khi vô hiệu hóa user,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_11,UserServiceImplTest,updateUserStatus - thành công khi kích hoạt lại user,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_12,UserServiceImplTest,updateUserStatus - ném exception khi user không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_13,UserServiceImplTest,getUserById - thành công khi user tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_USER_14,UserServiceImplTest,getUserById - ném exception khi user không tồn tại,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_WEBSOCKET_01,WebSocketServiceImplTest,sendNotificationToUser - gọi convertAndSendToUser đúng topic,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository
+TC_WEBSOCKET_02,WebSocketServiceImplTest,broadcastStudentJoined - gọi convertAndSend đúng topic monitoring,Tham khảo mã nguồn Mock,Các asssertions Pass,Dùng Mockito mock repository

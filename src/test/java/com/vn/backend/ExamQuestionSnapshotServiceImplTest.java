@@ -79,8 +79,11 @@ class ExamQuestionSnapshotServiceImplTest {
     @DisplayName("getAllQuestions - thành công lấy danh sách snapshot theo thứ tự SEQUENTIAL")
     void getAllQuestions_Success_Sequential() {
         Long sessionExamId = 100L;
+        com.vn.backend.entities.ExamQuestionSnapshot snapshot = new com.vn.backend.entities.ExamQuestionSnapshot();
+        snapshot.setExamQuestionAnswers(new java.util.ArrayList<>());
+        
         when(examQuestionSnapshotRepository.findAllBySessionExamId(eq(sessionExamId), any()))
-                .thenReturn(List.of(new com.vn.backend.entities.ExamQuestionSnapshot()));
+                .thenReturn(List.of(snapshot));
 
         var response = examQuestionSnapshotService.getAllQuestions(sessionExamId, QuestionOrderMode.SEQUENTIAL);
 

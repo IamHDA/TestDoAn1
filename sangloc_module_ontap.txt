@@ -1,0 +1,56 @@
+Để xác định chính xác các file liên quan đến nghiệp vụ **Ôn tập (Practice/Review)**, tôi sẽ quét qua danh sách các Service trong dự án và tìm kiếm các logic liên quan đến luyện tập tự do, theo dõi tiến độ và học tập thích nghi.
+
+Cụ thể, tôi sẽ tìm các từ khóa như `Practice`, `Progress`, `Summary`, `Adaptive` hay `LearningPath`.
+
+
+
+Listed directory services
+
+Dựa trên danh sách các Service, tôi đã xác định được một nhóm các file liên quan trực tiếp đến nghiệp vụ **Ôn tập và Tự học (Self-study & Review)**. Khác với nghiệp vụ Thi cử (mang tính bắt buộc và có lịch trình), nghiệp vụ Ôn tập trong dự án này tập trung vào tính cá nhân hóa và lộ trình học tập.
+
+Dưới đây là các file chính:
+
+1.  **`AdaptiveSessionService.java`**: Đây là file quan trọng nhất. "Adaptive" (Thích nghi) ám chỉ việc hệ thống tự đưa ra các câu hỏi ôn tập dựa trên năng lực và lịch sử làm bài của người dùng (thường áp dụng các thuật toán như Spaced Repetition - Lặp lại ngắt quãng).
+2.  **`LearningPathService.java`**: Quản lý lộ trình học tập. Nghiệp vụ ôn tập thường đi đôi với việc người dùng hoàn thành các mốc trong lộ trình này.
+3.  **`AdaptiveSessionServiceImpl.java`** (nằm trong thư mục `impl`): Chứa logic xử lý việc tính toán ngày ôn tập tiếp theo, điểm thành thục (mastery score) của từng chủ đề.
+4.  **`LearningPathServiceImpl.java`** (nằm trong thư mục `impl`): Xử lý việc hiển thị sơ đồ các chủ đề và trạng thái hoàn thành của người học.
+
+Ngoài ra, có một số dịch vụ bổ trợ:
+- **`StudentSessionExamService`**: Đôi khi các bài ôn tập được cấu hình dưới dạng một "Session" tập luyện (Practice Session) để người dùng làm đi làm lại.
+- **`TopicService`**: Cung cấp danh sách các chủ đề để người dùng chọn ôn tập theo từng mảng kiến thức cụ thể.
+
+Tôi sẽ kiểm tra qua nội dung của `AdaptiveSessionService` để xác nhận chắc chắn các tính năng bên trong liên quan đến ôn tập như thế nào.
+
+
+
+Viewed AdaptiveSessionServiceImpl.java:1-450
+
+Sau khi rà soát mã nguồn, đặc biệt là tệp `AdaptiveSessionServiceImpl.java`, tôi xác nhận các file sau đây liên quan trực tiếp đến nghiệp vụ **Ôn tập (Review/Practice)** trong hệ thống. 
+
+Nghiệp vụ ôn tập ở đây không chỉ là làm bài tập đơn thuần mà là một hệ thống **Học tập thích ứng (Adaptive Learning)** sử dụng thuật toán **Spaced Repetition (Lặp lại ngắt quãng)** để tối ưu hóa việc ghi nhớ.
+
+### 1. Nhóm Logic xử lý chính (Service Layer)
+Đây là "trái tim" của nghiệp vụ ôn tập, nơi tính toán độ khó và lịch ôn tập:
+- **`AdaptiveSessionService.java`** & **`AdaptiveSessionServiceImpl.java`**: Cung cấp các tính năng:
+    - Tìm câu hỏi tiếp theo dựa trên năng lực (`getNextQuestion`).
+    - Tính toán điểm thành thục (`updateMasteryScore`).
+    - Thuật toán lặp lại ngắt quãng để tính ngày ôn tập tiếp theo (`calculateNextReviewDate`).
+    - Chế độ luyện tập theo bộ câu hỏi (`getPracticeSet`).
+- **`LearningPathService.java`** & **`LearningPathServiceImpl.java`**: Quản lý lộ trình học tập và trạng thái hoàn thành các chủ đề để người dùng biết mình cần ôn tập phần nào.
+
+### 2. Nhóm Lưu trữ dữ liệu (Entity & Repository)
+Lưu giữ lịch sử và trình độ của người dùng:
+- **`UserTopicMastery.java`** & **`UserTopicMasteryRepository.java`**: Lưu trữ điểm thành thục (`masteryScore`) và ngày ôn tập tiếp theo (`nextReviewDate`) cho từng chủ đề của mỗi người dùng.
+- **`UserInteractionLog.java`** & **`UserInteractionLogRepository.java`**: Ghi lại chi tiết từng lần trả lời câu hỏi của người dùng (đúng/sai, thời gian trả lời) để làm dữ liệu đầu vào cho thuật toán thích ứng.
+
+### 3. Nhóm Giao tiếp (Controller & DTO)
+Định nghĩa các API cho ứng dụng frontend:
+- **`AdaptiveSessionController.java`**: Các endpoint để lấy câu hỏi ôn tập và nộp bài.
+- **`NextQuestionResponse.java`**, **`PracticeSetResponse.java`**: Định dạng dữ liệu câu hỏi ôn tập trả về.
+- **`SubmitAnswerRequest.java`**, **`SubmitAnswerResponse.java`**: Xử lý việc nộp câu trả lời và trả về điểm thành thục mới.
+
+### Đặc điểm nghiệp vụ cần lưu ý:
+- **Ngưỡng thành thục (`MASTERY_THRESHOLD = 0.8`)**: Một chủ đề được coi là "nắm vững" khi đạt trên 80%. Khi đó, hệ thống sẽ bắt đầu áp dụng lịch ôn tập ngắt quãng (3 ngày, 7 ngày, 14 ngày...).
+- **Độ khó linh hoạt**: Hệ thống tự điều chỉnh độ khó (Dễ/Trung bình/Khó) dựa trên điểm số hiện tại của người dùng trong chủ đề đó.
+
+Bạn có muốn tôi đi sâu vào kiểm thử (Unit Test) cho phần thuật toán quan trọng trong `AdaptiveSessionServiceImpl` này không? (Vì đây là phần chứa nhiều logic rẽ nhánh phức tạp nhất của nghiệp vụ ôn tập).
