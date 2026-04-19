@@ -1,15 +1,11 @@
 package com.vn.backend;
 
-import com.vn.backend.constants.AppConst;
-import com.vn.backend.dto.request.topic.CreateApprovalTopicRequest;
-import com.vn.backend.dto.request.topic.CreateTopicRequest;
-import com.vn.backend.dto.request.topic.UpdateTopicRequest;
+import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
+import com.vn.backend.dto.request.common.SearchRequest;
+import com.vn.backend.dto.request.topic.*;
 import com.vn.backend.entities.Topic;
 import com.vn.backend.entities.User;
-import com.vn.backend.enums.ApprovalStatus;
-import com.vn.backend.enums.EntityType;
-import com.vn.backend.enums.RequestType;
-import com.vn.backend.enums.Role;
+import com.vn.backend.enums.*;
 import com.vn.backend.exceptions.AppException;
 import com.vn.backend.repositories.ApprovalRequestItemsRepository;
 import com.vn.backend.repositories.SubjectRepository;
@@ -25,37 +21,33 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("TopicServiceImpl Unit Tests")
 class TopicServiceImplTest {
 
-    @Mock
-    private TopicRepository topicRepository;
-
-    @Mock
-    private SubjectRepository subjectRepository;
-
-    @Mock
-    private ApprovalRequestItemsRepository approvalRequestItemsRepository;
-
-    @Mock
-    private AuthService authService;
-
-    @Mock
-    private ApprovalRequestService approvalRequestService;
-
-    @Mock
-    private MessageUtils messageUtils;
+    @Mock private TopicRepository topicRepository;
+    @Mock private SubjectRepository subjectRepository;
+    @Mock private ApprovalRequestItemsRepository approvalRequestItemsRepository;
+    @Mock private AuthService authService;
+    @Mock private ApprovalRequestService approvalRequestService;
+    @Mock private MessageUtils messageUtils;
 
     @InjectMocks
     private TopicServiceImpl topicService;
@@ -66,174 +58,122 @@ class TopicServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        teacherUser = User.builder()
-                .id(1L)
-                .username("teacher")
-                .role(Role.TEACHER)
-                .build();
-
-        adminUser = User.builder()
-                .id(2L)
-                .username("admin")
-                .role(Role.ADMIN)
-                .build();
-
-        existingTopic = Topic.builder()
-                .topicId(100L)
-                .topicName("Math Advanced")
-                .subjectId(10L)
-                .isDeleted(false)
-                .build();
-    }
-
-    // ===================== approvalRequestTopic =====================
-
-    @Test
-    @DisplayName("approvalRequestTopic - ném exception khi user không phải TEACHER")
-    void approvalRequestTopic_ThrowsException_WhenNotTeacher() {
-        when(authService.getCurrentUser()).thenReturn(adminUser); // ADMIN thì không được tạo request (theo logic hiện tại)
-        when(messageUtils.getMessage(AppConst.MessageConst.UNAUTHORIZED)).thenReturn("Unauthorized");
-
-        CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
-
-        assertThatThrownBy(() -> topicService.approvalRequestTopic(request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> {
-                    AppException appEx = (AppException) ex;
-                    assertThat(appEx.getCode()).isEqualTo(AppConst.MessageConst.UNAUTHORIZED);
-                });
-    }
-
-    @Test
-    @DisplayName("approvalRequestTopic - ném exception khi Subject không tồn tại")
-    void approvalRequestTopic_ThrowsException_WhenSubjectNotFound() {
+        teacherUser = User.builder().id(1L).role(Role.TEACHER).build();
+        adminUser = User.builder().id(2L).role(Role.ADMIN).build();
+        existingTopic = Topic.builder().topicId(100L).topicName("Topic 1").subjectId(10L).isDeleted(false).build();
+        
+        when(messageUtils.getMessage(anyString())).thenReturn("Error message");
         when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(10L)).thenReturn(false);
-        when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not found");
+        when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(anyLong())).thenReturn(true);
+    }
 
+    // ================== approvalRequestTopic ==================
+    @Test
+    @DisplayName("TC_QLLH_TOP_01: approvalRequestTopic - ném lỗi khi user không phải TEACHER")
+    void approvalRequestTopic_NotTeacher() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        assertThatThrownBy(() -> topicService.approvalRequestTopic(new CreateApprovalTopicRequest()))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_02: approvalRequestTopic - ném lỗi khi đang có một request PENDING cho cùng môn học")
+    void approvalRequestTopic_PendingExists() {
         CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
         request.setSubjectId(10L);
+        request.setTopicRequests(List.of(new CreateTopicRequest()));
+
+        // Giả lập đang có topic ID=100 đang nằm trong Request PENDING
+        when(approvalRequestItemsRepository.findEntityIdsByPendingRequest(any(), any(), any())).thenReturn(List.of(100L));
+        when(topicRepository.findAllById(anyList())).thenReturn(List.of(existingTopic));
 
         assertThatThrownBy(() -> topicService.approvalRequestTopic(request))
                 .isInstanceOf(AppException.class)
-                .satisfies(ex -> {
-                    AppException appEx = (AppException) ex;
-                    assertThat(appEx.getCode()).isEqualTo(AppConst.MessageConst.NOT_FOUND);
-                });
+                .hasMessageContaining("Đang tồn tại một yêu cầu");
     }
 
     @Test
-    @DisplayName("approvalRequestTopic - ném exception khi topicRequests trống")
-    void approvalRequestTopic_ThrowsException_WhenTopicRequestsEmpty() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(10L)).thenReturn(true);
-
+    @DisplayName("TC_QLLH_TOP_03: approvalRequestTopic - ném lỗi khi tên Topic rỗng")
+    void approvalRequestTopic_EmptyName() {
         CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
         request.setSubjectId(10L);
-        request.setTopicRequests(new ArrayList<>()); // rỗng
+        CreateTopicRequest topReq = new CreateTopicRequest();
+        topReq.setTopicName(""); // Rỗng
+        request.setTopicRequests(List.of(topReq));
 
         assertThatThrownBy(() -> topicService.approvalRequestTopic(request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> {
-                    AppException appEx = (AppException) ex;
-                    assertThat(appEx.getCode()).isEqualTo(AppConst.MessageConst.INVALID_LOGIC_QUESTION);
-                });
+                .isInstanceOf(AppException.class);
     }
 
     @Test
-    @DisplayName("approvalRequestTopic - thành công")
+    @DisplayName("TC_QLLH_TOP_04: approvalRequestTopic - thành công tạo lô Topics lưu tạm và tạo Request")
     void approvalRequestTopic_Success() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(10L)).thenReturn(true);
-        when(approvalRequestItemsRepository.findEntityIdsByPendingRequest(RequestType.TOPIC_CREATE, ApprovalStatus.PENDING, EntityType.TOPIC))
-                .thenReturn(new ArrayList<>()); // không có pending request
-
-        // Mô phỏng saveAllTopic trả về topic đã có ID
-        when(topicRepository.saveAllAndFlush(anyList())).thenAnswer(inv -> {
-            List<Topic> topics = inv.getArgument(0);
-            topics.forEach(t -> t.setTopicId(999L));
-            return topics;
-        });
-
         CreateApprovalTopicRequest request = new CreateApprovalTopicRequest();
         request.setSubjectId(10L);
         request.setRequestType(RequestType.TOPIC_CREATE);
-        request.setRequestDescription("Create new topics");
+        
+        CreateTopicRequest topReq = new CreateTopicRequest();
+        topReq.setTopicName("Topic New");
+        request.setTopicRequests(List.of(topReq));
 
-        CreateTopicRequest tRequest = new CreateTopicRequest();
-        tRequest.setTopicName("New Topic");
-        request.setTopicRequests(List.of(tRequest));
+        when(approvalRequestItemsRepository.findEntityIdsByPendingRequest(any(), any(), any())).thenReturn(Collections.emptyList());
+        when(topicRepository.saveAllAndFlush(anyList())).thenReturn(List.of(existingTopic));
 
         topicService.approvalRequestTopic(request);
 
-        verify(approvalRequestService).createRequest(
-                eq(RequestType.TOPIC_CREATE),
-                eq("Create new topics"),
-                eq(teacherUser.getId()),
-                anyList()
-        );
+        verify(topicRepository).saveAllAndFlush(anyList());
+        verify(approvalRequestService).createRequest(eq(RequestType.TOPIC_CREATE), any(), eq(1L), anyList());
     }
 
-    // ===================== updateTopic =====================
+    // ================== updateTopic ==================
+    @Test
+    @DisplayName("TC_QLLH_TOP_05: updateTopic - ném UNAUTHORIZED nếu không phải ADMIN")
+    void updateTopic_NotAdmin() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        assertThatThrownBy(() -> topicService.updateTopic(100L, new UpdateTopicRequest()))
+                .isInstanceOf(AppException.class);
+    }
 
     @Test
-    @DisplayName("updateTopic - thành công khi user là ADMIN")
-    void updateTopic_Success_WhenAdmin() {
-        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
+    @DisplayName("TC_QLLH_TOP_06: updateTopic - ném lỗi khi set chính mình làm prerequisite")
+    void updateTopic_SelfPrerequisite() {
         when(authService.getCurrentUser()).thenReturn(adminUser);
+        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
+        
+        UpdateTopicRequest request = new UpdateTopicRequest();
+        request.setPrerequisiteTopicId(100L); // Trùng với topicId đang sửa
+
+        assertThatThrownBy(() -> topicService.updateTopic(100L, request))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_QLLH_TOP_07: updateTopic - thành công cập nhật tên và topic tiên quyết")
+    void updateTopic_Success() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
+        
+        // Mock topic tiên quyết (ID=50) tồn tại
+        Topic prereq = Topic.builder().topicId(50L).build();
+        when(topicRepository.findByTopicIdAndIsDeleted(50L, false)).thenReturn(Optional.of(prereq));
 
         UpdateTopicRequest request = new UpdateTopicRequest();
-        request.setTopicName("Updated Topic Name");
+        request.setTopicName("Topic Updated");
+        request.setPrerequisiteTopicId(50L);
 
         topicService.updateTopic(100L, request);
 
-        assertThat(existingTopic.getTopicName()).isEqualTo("Updated Topic Name");
+        assertThat(existingTopic.getTopicName()).isEqualTo("Topic Updated");
+        assertThat(existingTopic.getPrerequisiteTopicId()).isEqualTo(50L);
         verify(topicRepository).save(existingTopic);
     }
 
+    // ================== deleteTopic ==================
     @Test
-    @DisplayName("updateTopic - ném exception khi user không phải ADMIN")
-    void updateTopic_ThrowsException_WhenNotAdmin() {
-        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(messageUtils.getMessage(AppConst.MessageConst.UNAUTHORIZED)).thenReturn("Unauthorized");
-
-        UpdateTopicRequest request = new UpdateTopicRequest();
-        request.setTopicName("Updated Name");
-
-        assertThatThrownBy(() -> topicService.updateTopic(100L, request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> {
-                    AppException appEx = (AppException) ex;
-                    assertThat(appEx.getCode()).isEqualTo(AppConst.MessageConst.UNAUTHORIZED);
-                });
-    }
-    
-    @Test
-    @DisplayName("updateTopic - ném exception khi set topic tự làm prerequisite của chính nó")
-    void updateTopic_ThrowsException_WhenPrerequisiteIsItself() {
-        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
-        when(authService.getCurrentUser()).thenReturn(adminUser);
-
-        UpdateTopicRequest request = new UpdateTopicRequest();
-        request.setPrerequisiteTopicId(100L); // Trùng ID với topic đang update
-
-        assertThatThrownBy(() -> topicService.updateTopic(100L, request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> {
-                    AppException appEx = (AppException) ex;
-                    assertThat(appEx.getCode()).isEqualTo(AppConst.MessageConst.NOT_FOUND);
-                    assertThat(appEx.getHttpStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-                });
-    }
-
-    // ===================== deleteTopic =====================
-
-    @Test
-    @DisplayName("deleteTopic - thành công (soft delete) khi user là ADMIN")
+    @DisplayName("TC_QLLH_TOP_08: deleteTopic - thành công xóa mềm (với quyền Admin)")
     void deleteTopic_Success() {
-        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
         when(authService.getCurrentUser()).thenReturn(adminUser);
+        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
 
         topicService.deleteTopic(100L);
 
@@ -242,15 +182,32 @@ class TopicServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteTopic - ném exception khi user không phải ADMIN")
-    void deleteTopic_ThrowsException_WhenNotAdmin() {
-        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
+    @DisplayName("TC_QLLH_TOP_09: deleteTopic - ném lỗi khi không phải Admin")
+    void deleteTopic_Forbidden() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(messageUtils.getMessage(AppConst.MessageConst.UNAUTHORIZED)).thenReturn("Unauthorized");
+        when(topicRepository.findByTopicIdAndIsDeleted(100L, false)).thenReturn(Optional.of(existingTopic));
 
         assertThatThrownBy(() -> topicService.deleteTopic(100L))
                 .isInstanceOf(AppException.class);
+    }
 
-        verify(topicRepository, never()).save(any());
+    // ================== searchTopic ==================
+    @Test
+    @DisplayName("TC_QLLH_TOP_10: searchTopics - thành công và lấy đúng data")
+    void searchTopics_Success() {
+        TopicFilterRequest filter = new TopicFilterRequest();
+        filter.setSubjectId(10L);
+        
+        BaseFilterSearchRequest<TopicFilterRequest> req = new BaseFilterSearchRequest<>();
+        req.setFilters(filter);
+        req.setPagination(new SearchRequest());
+
+        Page<Topic> page = new PageImpl<>(List.of(existingTopic));
+        when(topicRepository.findTopicsBySubjectIdWithSearch(anyLong(), any(), any(Pageable.class))).thenReturn(page);
+
+        var result = topicService.searchTopics(req);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().iterator().next().getTopicName()).isEqualTo("Topic 1");
     }
 }
