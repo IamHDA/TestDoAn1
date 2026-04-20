@@ -316,11 +316,9 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Thiếu validation cho maxScore = 0")
-        @DisplayName("TC_ASS1_006: [BUG] maxScore = 0 phải bị từ chối nhưng backend chấp nhận")
+        @DisplayName("TC_ASS1_006: maxScore = 0 phải bị từ chối (Kỳ vọng ném AppException)")
         void createAssignment_ZeroMaxScore_ShouldFail() {
-            // Quy tắc nghiệp vụ: maxScore > 0. Hiện tại không có validation → BUG
-            when(authService.getCurrentUser()).thenReturn(teacherUser);
+                        when(authService.getCurrentUser()).thenReturn(teacherUser);
             when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE))
                     .thenReturn(Optional.of(classroom));
             mockTeacherPermission(100L, 1L);
@@ -336,8 +334,7 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Thiếu validation cho title = null")
-        @DisplayName("TC_ASS1_007: [BUG] Tiêu đề null phải bị từ chối nhưng backend chấp nhận")
+        @DisplayName("TC_ASS1_007: Tiêu đề null phải bị từ chối (Kỳ vọng ném AppException)")
         void createAssignment_NullTitle_ShouldFail() {
             when(authService.getCurrentUser()).thenReturn(teacherUser);
             when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE))
@@ -354,8 +351,7 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Cho phép tạo hạn nộp trong quá khứ")
-        @DisplayName("TC_ASS1_008: [BUG] Hạn nộp trong quá khứ phải bị từ chối")
+        @DisplayName("TC_ASS1_008: Hạn nộp trong quá khứ phải bị từ chối")
         void createAssignment_PastDueDate_ShouldFail() {
             when(authService.getCurrentUser()).thenReturn(teacherUser);
             when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE))
@@ -439,6 +435,22 @@ class AssignmentServiceImplTest {
             assertThatThrownBy(() -> assignmentService.createAssignment(100L, req))
                     .isInstanceOf(AppException.class)
                     .hasFieldOrPropertyWithValue("httpStatus", HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("TC_ASS1_012: Điểm tối đa âm phải bị từ chối (Kỳ vọng ném AppException)")
+        void createAssignment_NegativeMaxScore_ShouldFail() {
+            when(authService.getCurrentUser()).thenReturn(teacherUser);
+            when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE))
+                    .thenReturn(Optional.of(classroom));
+            mockTeacherPermission(100L, 1L);
+
+            AssignmentCreateRequest req = new AssignmentCreateRequest();
+            req.setTitle("Bài tập điểm âm");
+            req.setMaxScore(-5L);
+
+            assertThatThrownBy(() -> assignmentService.createAssignment(100L, req))
+                    .isInstanceOf(AppException.class);
         }
     }
 
@@ -593,8 +605,7 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Cho phép giảm maxScore xuống dưới điểm đã chấm")
-        @DisplayName("TC_ASS2_008: [BUG] Giảm maxScore dưới điểm đã chấm → phải từ chối nhưng backend chấp nhận")
+        @DisplayName("TC_ASS2_008: Giảm maxScore dưới điểm đã chấm → phải từ chối (Kỳ vọng ném AppException)")
         void updateAssignment_LowerMaxScore_ValidationMissing() {
             // Quy tắc nghiệp vụ: không được hạ maxScore xuống dưới điểm đã có → hiện tại thiếu validation
             when(authService.getCurrentUser()).thenReturn(teacherUser);
@@ -612,8 +623,7 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Cho phép update hạn nộp vào quá khứ")
-        @DisplayName("TC_ASS2_009: [BUG] Đặt hạn nộp trong quá khứ → phải từ chối nhưng backend chấp nhận")
+        @DisplayName("TC_ASS2_009: Đặt hạn nộp trong quá khứ → phải từ chối (Kỳ vọng ném AppException)")
         void updateAssignment_PastDueDate_ShouldFail() {
             when(authService.getCurrentUser()).thenReturn(teacherUser);
             when(assignmentRepository.findByAssignmentIdAndNotDeleted(50L)).thenReturn(Optional.of(sampleAssignment));
@@ -659,6 +669,24 @@ class AssignmentServiceImplTest {
 
             assignmentService.updateAssignment(50L, req);
             assertThat(sampleAssignment.isSubmissionClosed()).isTrue();
+        }
+
+        @Test
+        @DisplayName("TC_ASS2_012: Danh sách file đính kèm chứa giá trị null ném AppException")
+        void updateAssignment_NullAttachmentItem_ShouldFail() {
+            when(authService.getCurrentUser()).thenReturn(teacherUser);
+            when(assignmentRepository.findByAssignmentIdAndNotDeleted(50L)).thenReturn(Optional.of(sampleAssignment));
+            mockTeacherPermission(100L, 1L);
+            when(announcementRepository.findByObjectIdAndType(50L, AnnouncementType.ASSIGNMENT))
+                    .thenReturn(mockAnnouncement());
+
+            AssignmentUpdateRequest req = new AssignmentUpdateRequest();
+            List<AssignmentUpdateRequest.AttachmentRequest> attReqList = new ArrayList<>();
+            attReqList.add(null); // Gửi phần tử null
+            req.setAttachments(attReqList);
+
+            assertThatThrownBy(() -> assignmentService.updateAssignment(50L, req))
+                    .isInstanceOf(AppException.class);
         }
     }
 
@@ -804,8 +832,7 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Trả về canSubmit = true mặc dù đã hết hạn nộp")
-        @DisplayName("TC_ASS4_003: [BUG] Sinh viên không thể nộp nếu đã hết hạn (code lỗi: vẫn trả true)")
+        @DisplayName("TC_ASS4_003: Sinh viên không thể nộp nếu đã hết hạn ")
         void getDetail_StudentCannotSubmitIfPastDue() {
             // Thiết lập hạn đã qua
             sampleAssignment.setDueDate(LocalDateTime.now().minusDays(1));
@@ -1056,6 +1083,18 @@ class AssignmentServiceImplTest {
             assignmentService.addAssignee("50", request);
             verify(submissionRepository).save(any());
         }
+
+        @Test
+        @DisplayName("TC_ASS6_006: Gửi assignmentId không phải số sẽ ném AppException")
+        void addAssignee_InvalidAssignmentIdFormat_ShouldThrowBadRequest() {
+            when(authService.getCurrentUser()).thenReturn(teacherUser);
+            
+            AssigneeAddRequest request = new AssigneeAddRequest();
+            request.setUserId("2");
+            // Gọi với ID kiểu string "abc" -> Long.parseLong("abc") sẽ ném NumberFormatException, bỏ qua luồng AppException
+            assertThatThrownBy(() -> assignmentService.addAssignee("abc_invalid", request))
+                    .isInstanceOf(AppException.class);
+        }
     }
 
     // =================================================================
@@ -1102,14 +1141,29 @@ class AssignmentServiceImplTest {
             BaseFilterSearchRequest<AssigneeSearchRequest> request = new BaseFilterSearchRequest<>();
             request.setFilters(new AssigneeSearchRequest());
             request.getFilters().setAssignmentId("99");
-            request.setPagination(new SearchRequest());
 
             assertThatThrownBy(() -> assignmentService.searchAssignee(request))
                     .isInstanceOf(AppException.class);
         }
 
         @Test
-        @DisplayName("TC_ASS7_003: Danh sách assignee rỗng → trả về collection trống")
+        @DisplayName("TC_ASS7_003: Object Pagination = null ném AppException")
+        void searchAssignee_NullPagination_ShouldThrowBadRequest() {
+            when(authService.getCurrentUser()).thenReturn(teacherUser);
+            when(assignmentRepository.findByAssignmentIdAndNotDeleted(50L)).thenReturn(Optional.of(sampleAssignment));
+            mockTeacherPermission(100L, 1L);
+
+            BaseFilterSearchRequest<AssigneeSearchRequest> request = new BaseFilterSearchRequest<>();
+            request.setFilters(new AssigneeSearchRequest());
+            request.getFilters().setAssignmentId("50");
+            request.setPagination(null); // Gây ra NPE khi gọi getPagination().getPagingMeta()
+
+            assertThatThrownBy(() -> assignmentService.searchAssignee(request))
+                    .isInstanceOf(AppException.class);
+        }
+
+        @Test
+        @DisplayName("TC_ASS7_004: Danh sách assignee rỗng → trả về collection trống")
         void searchAssignee_EmptyResult() {
             when(authService.getCurrentUser()).thenReturn(teacherUser);
             when(assignmentRepository.findByAssignmentIdAndNotDeleted(50L)).thenReturn(Optional.of(sampleAssignment));
@@ -1128,11 +1182,10 @@ class AssignmentServiceImplTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("BUG dịch vụ: Lỗ hổng bảo mật, thiếu kiểm tra vai trò người gọi")
-        @DisplayName("TC_ASS7_004: Sinh viên truy cập vào classroom hợp lệ → dịch vụ không ném lỗi xác thực")
+        @DisplayName("TC_ASS7_005: Sinh viên truy cập vào classroom hợp lệ → dịch vụ không ném lỗi xác thực")
         void searchAssignee_StudentCanAccess_NoBizRuleCheck() {
             // Ghi chú: code hiện tại chỉ kiểm tra classroom access, không kiểm tra role
-            // Đây là điểm thiếu validation → BUG tiềm ẩn
+            // Đây là điểm thiếu validation → Cần bắn FORBIDDEN
             when(authService.getCurrentUser()).thenReturn(studentUser);
             when(assignmentRepository.findByAssignmentIdAndNotDeleted(50L)).thenReturn(Optional.of(sampleAssignment));
             mockStudentAccess(100L, 2L);
@@ -1145,7 +1198,7 @@ class AssignmentServiceImplTest {
             request.getFilters().setAssignmentId("50");
             request.setPagination(new SearchRequest());
 
-            // Hiện tại code không throw FORBIDDEN với sinh viên → ghi nhận BUG
+            // Hiện tại code không throw FORBIDDEN với sinh viên → kỳ vọng ném AppException
             assertThatThrownBy(() -> assignmentService.searchAssignee(request))
                     .isInstanceOf(AppException.class);
         }
@@ -1571,6 +1624,46 @@ class AssignmentServiceImplTest {
                     100L, StatisticsPeriod.ALL, StatisticsGroupBy.SESSION);
 
             assertThat(response.getOverallTrend().getTrend()).isEqualTo(ImprovementTrend.STABLE);
+        }
+
+        @Test
+        @DisplayName("TC_ASS10_012: Tính toán chính xác consistentImprovers và decliningStudents")
+        void improvementTrend_TrendStatisticsCounters() {
+            when(classroomRepository.findByClassroomIdAndClassroomStatusAndIsActiveTrue(100L, ClassroomStatus.ACTIVE))
+                    .thenReturn(Optional.of(classroom));
+            LocalDateTime now = LocalDateTime.now();
+            Assignment a1 = buildAssignmentWithTimestamp(1L, 100L, "Bài 1", now.minusDays(10));
+            Assignment a2 = buildAssignmentWithTimestamp(2L, 100L, "Bài 2", now.minusDays(2));
+
+            when(assignmentRepository.findAllByClassroomIdAndIsDeletedFalse(100L)).thenReturn(List.of(a1, a2));
+
+            // Student 1: Tăng điểm (Improver) 6.0 -> 8.0
+            Submission s1_a1 = Submission.builder().studentId(1L).grade(6.0).submissionStatus(SubmissionStatus.SUBMITTED).build();
+            Submission s1_a2 = Submission.builder().studentId(1L).grade(8.0).submissionStatus(SubmissionStatus.LATE_SUBMITTED).build();
+            
+            // Student 2: Giảm điểm (Declining) 9.0 -> 5.0
+            Submission s2_a1 = Submission.builder().studentId(2L).grade(9.0).submissionStatus(SubmissionStatus.SUBMITTED).build();
+            Submission s2_a2 = Submission.builder().studentId(2L).grade(5.0).submissionStatus(SubmissionStatus.SUBMITTED).build();
+
+            // Student 3: Bỏ thi bài 2
+            Submission s3_a1 = Submission.builder().studentId(3L).grade(7.0).submissionStatus(SubmissionStatus.SUBMITTED).build();
+            Submission s3_a2 = Submission.builder().studentId(3L).grade(null).submissionStatus(SubmissionStatus.NOT_SUBMITTED).build();
+
+            when(submissionRepository.findAllByAssignmentId(1L)).thenReturn(List.of(s1_a1, s2_a1, s3_a1));
+            when(submissionRepository.findAllByAssignmentId(2L)).thenReturn(List.of(s1_a2, s2_a2, s3_a2));
+
+            when(submissionRepository.getAverageGradeByAssignmentId(anyLong())).thenReturn(7.0);
+            when(submissionRepository.findAllGradesByAssignmentId(anyLong())).thenReturn(List.of(7.0));
+            when(submissionRepository.countTotalStudentsByAssignmentId(anyLong())).thenReturn(3L);
+            when(submissionRepository.countSubmittedStudentsByAssignmentId(anyLong())).thenReturn(2L);
+            when(submissionRepository.getPassRateByAssignmentId(anyLong())).thenReturn(100.0);
+            when(submissionRepository.getExcellentRateByAssignmentId(anyLong())).thenReturn(50.0);
+
+            AssignmentImprovementTrendResponse response = assignmentService.getImprovementTrend(
+                    100L, StatisticsPeriod.ALL, StatisticsGroupBy.SESSION);
+
+            assertThat(response.getStatistics().getConsistentImprovers()).isEqualTo(1); // Student 1
+            assertThat(response.getStatistics().getDecliningStudents()).isEqualTo(1); // Student 2
         }
     }
 }

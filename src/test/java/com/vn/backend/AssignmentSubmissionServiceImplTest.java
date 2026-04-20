@@ -735,11 +735,10 @@ class AssignmentSubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLBT_SSV7_004 – Điểm âm → phải throw AppException (BUG: backend không validate)")
+    @DisplayName("TC_QLBT_SSV7_004 – Điểm âm → phải throw AppException ")
     void markSubmission_NegativeGrade_ShouldThrow() {
         // Kỳ vọng thực tế: điểm không thể < 0
-        // BUG DETECTED: @AllowFormat(NON_NEGATIVE_DECIMAL_2) chỉ được enforce ở Controller layer,
-        //               Service layer không validate → grade âm vẫn được lưu vào DB
+                //               Service layer không validate → grade âm vẫn được lưu vào DB
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.hasPermission(100L, 2L)).thenReturn(true);
 
@@ -756,11 +755,10 @@ class AssignmentSubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLBT_SSV7_005 – Điểm vượt maxScore (12/10) → phải throw AppException (BUG: backend không validate)")
+    @DisplayName("TC_QLBT_SSV7_005 – Điểm vượt maxScore (12/10) → phải throw AppException ")
     void markSubmission_GradeExceedsMaxScore_ShouldThrow() {
         // Kỳ vọng thực tế: grade không được vượt quá maxScore của Assignment
-        // BUG DETECTED: Service không load Assignment để check maxScore → grade=12 với maxScore=10 vẫn được lưu
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
+                when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(submissionRepository.hasPermission(100L, 2L)).thenReturn(true);
 
         Submission sub = buildSubmission(100L, 10L); // assignment maxScore = 10
@@ -1039,11 +1037,10 @@ class AssignmentSubmissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLBT_SSV10_009 – Điểm import vượt maxScore → phải throw AppException (BUG: backend không validate)")
+    @DisplayName("TC_QLBT_SSV10_009 – Điểm import vượt maxScore → phải throw AppException ")
     void importScores_GradeExceedsMaxScore_ShouldThrow() throws IOException {
         // Kỳ vọng thực tế: điểm import không được vượt quá maxScore của Assignment
-        // BUG DETECTED: parseSubmissionExcel() không nhận biết maxScore, chỉ parse số
-        //               → Điểm 99.0 với maxScore=10 vẫn được lưu vào DB
+                //               → Điểm 99.0 với maxScore=10 vẫn được lưu vào DB
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(assignmentRepository.canUserViewSubmissions(10L, 2L)).thenReturn(true);
 
