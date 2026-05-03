@@ -197,6 +197,20 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-pool2</artifactId>
 		</dependency>
+
+		<!-- ===== SELENIUM TEST DEPENDENCIES ===== -->
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>4.18.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.github.bonigarcia</groupId>
+			<artifactId>webdrivermanager</artifactId>
+			<version>5.7.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<profiles>
 		<profile>
@@ -269,6 +283,43 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+
+			<!-- ===== JMETER MAVEN PLUGIN ===== -->
+			<plugin>
+				<groupId>com.lazerycode.jmeter</groupId>
+				<artifactId>jmeter-maven-plugin</artifactId>
+				<version>3.8.0</version>
+				<executions>
+					<execution>
+						<id>jmeter-tests</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>jmeter</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<!-- Thư mục chứa các file .jmx -->
+					<testFilesDirectory>${project.basedir}/src/test/jmeter</testFilesDirectory>
+					<!-- Thư mục lưu kết quả .jtl -->
+					<resultsDirectory>${project.build.directory}/jmeter/results</resultsDirectory>
+					<!-- Thư mục lưu log JMeter -->
+					<logsDirectory>${project.build.directory}/jmeter/logs</logsDirectory>
+					<!-- Định dạng kết quả: xml để có thể generate HTML report -->
+					<resultFileFormat>xml</resultFileFormat>
+					<!-- Không dừng build khi có lỗi test JMeter, chỉ report -->
+					<ignoredResultFailures>true</ignoredResultFailures>
+					<!-- Cấu hình JMeter properties -->
+					<propertiesJMeter>
+						<jmeter.save.saveservice.output_format>xml</jmeter.save.saveservice.output_format>
+						<jmeter.save.saveservice.response_data>false</jmeter.save.saveservice.response_data>
+						<jmeter.save.saveservice.samplerData>false</jmeter.save.saveservice.samplerData>
+						<jmeter.save.saveservice.requestHeaders>false</jmeter.save.saveservice.requestHeaders>
+						<jmeter.save.saveservice.latency>true</jmeter.save.saveservice.latency>
+						<jmeter.save.saveservice.connect_time>true</jmeter.save.saveservice.connect_time>
+					</propertiesJMeter>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
