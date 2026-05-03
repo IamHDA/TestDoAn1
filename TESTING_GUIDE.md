@@ -6,15 +6,23 @@
 src/test/
 ├── java/com/vn/backend/
 │   ├── selenium/
-│   │   ├── SeleniumBaseTest.java          # Base class (WebDriver setup/teardown)
-│   │   ├── SwaggerUISeleniumTest.java     # Test Swagger UI (5 test cases)
-│   │   ├── LoginSeleniumTest.java         # Test luồng đăng nhập (5 test cases)
-│   │   └── UserManagementSeleniumTest.java # Test User Management API (6 test cases)
+│   │   ├── SeleniumBaseTest.java                   # Base class (WebDriver setup/teardown)
+│   │   ├── SwaggerUISeleniumTest.java              # Swagger UI (5 TCs)
+│   │   ├── LoginSeleniumTest.java                  # Luồng đăng nhập (5 TCs)
+│   │   ├── UserManagementSeleniumTest.java         # Quản lý người dùng (6 TCs)
+│   │   ├── SubjectManagementSeleniumTest.java      # Quản lý môn học (8 TCs)
+│   │   ├── TopicManagementSeleniumTest.java        # Quản lý chủ đề (9 TCs)
+│   │   ├── ClassroomManagementSeleniumTest.java    # Quản lý lớp học (10 TCs)
+│   │   ├── ExamManagementSeleniumTest.java         # Quản lý đề thi (10 TCs)
+│   │   ├── QuestionManagementSeleniumTest.java     # Ngân hàng câu hỏi (10 TCs)
+│   │   ├── AssignmentManagementSeleniumTest.java   # Quản lý bài tập (10 TCs)
+│   │   ├── SessionExamSeleniumTest.java            # Ca thi trực tiếp (14 TCs)
+│   │   └── ApiSecuritySeleniumTest.java            # Bảo mật & kiểm tra chung (12 TCs)
 │   └── (các unit test hiện có...)
 └── jmeter/
-    ├── 01_login_500users.jmx              # 500 users đăng nhập đồng thời
-    ├── 02_load_increase_threshold.jmx     # Tăng dần 500→750→1000→1250→1500 tìm ngưỡng
-    └── 03_session_exam_workflow_500users.jmx # Workflow thi cử 500 users
+    ├── 01_login_500users.jmx                       # 500 users đăng nhập đồng thời
+    ├── 02_load_increase_threshold.jmx              # Tăng dần 500→750→1000→1250→1500 tìm ngưỡng
+    └── 03_session_exam_workflow_500users.jmx        # Workflow thi cử 500 users
 ```
 
 ---
@@ -29,16 +37,24 @@ src/test/
 ### Lệnh chạy
 
 ```bash
-# Chạy tất cả Selenium tests (Headless mode - mặc định, phù hợp CI/CD)
+# Chạy tất cả 91 Selenium tests (Headless mode - mặc định, phù hợp CI/CD)
 mvn test -Dtest="*SeleniumTest"
 
 # Chạy với GUI (mở trình duyệt Chrome để quan sát) - dùng khi debug local
 mvn test -Dtest="*SeleniumTest" -Dselenium.headless=false
 
-# Chạy riêng từng class test
+# Chạy riêng từng class (ví dụ)
 mvn test -Dtest="SwaggerUISeleniumTest"
 mvn test -Dtest="LoginSeleniumTest"
 mvn test -Dtest="UserManagementSeleniumTest"
+mvn test -Dtest="SubjectManagementSeleniumTest"
+mvn test -Dtest="TopicManagementSeleniumTest"
+mvn test -Dtest="ClassroomManagementSeleniumTest"
+mvn test -Dtest="ExamManagementSeleniumTest"
+mvn test -Dtest="QuestionManagementSeleniumTest"
+mvn test -Dtest="AssignmentManagementSeleniumTest"
+mvn test -Dtest="SessionExamSeleniumTest"
+mvn test -Dtest="ApiSecuritySeleniumTest"
 
 # Chạy với URL backend khác (ví dụ staging)
 mvn test -Dtest="*SeleniumTest" -Dapp.base.url=http://192.168.1.100:8080
