@@ -56,7 +56,6 @@ class ClassroomServiceImplTest {
     @Mock private ClassScheduleRepository classScheduleRepository;
     @Mock private ApprovalRequestService approvalRequestService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final AtomicLong classroomIds = new AtomicLong(1);
 
     private ClassroomServiceImpl service;
