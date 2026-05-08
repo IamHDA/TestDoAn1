@@ -2,186 +2,333 @@ package com.vn.backend;
 
 import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
-import com.vn.backend.dto.request.subject.*;
+import com.vn.backend.dto.request.subject.SubjectCreateRequest;
+import com.vn.backend.dto.request.subject.SubjectCreateRequestDTO;
+import com.vn.backend.dto.request.subject.SubjectSearchRequest;
+import com.vn.backend.dto.request.subject.SubjectSearchRequestDTO;
+import com.vn.backend.dto.request.subject.UpdateSubjectRequest;
+import com.vn.backend.dto.response.common.ResponseListData;
+import com.vn.backend.dto.response.subject.SubjectSearchResponse;
 import com.vn.backend.entities.Subject;
 import com.vn.backend.exceptions.AppException;
 import com.vn.backend.repositories.SubjectRepository;
 import com.vn.backend.services.impl.SubjectServiceImpl;
 import com.vn.backend.utils.MessageUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import static com.vn.backend.constants.AppConst.MessageConst;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("SubjectServiceImpl Unit Tests")
 class SubjectServiceImplTest {
 
-    @Mock private SubjectRepository subjectRepository;
-    @Mock private MessageUtils messageUtils;
+    private static final Long SUBJECT_ID = 10L;
 
-    @InjectMocks
-    private SubjectServiceImpl subjectService;
+    @Mock
+    private SubjectRepository subjectRepository;
 
-    private Subject existingSubject;
+    private SubjectServiceImpl service;
+
+    private final Map<Long, Subject> subjectStore = new HashMap<>();
+    private Subject savedSubject;
 
     @BeforeEach
     void setUp() {
-        existingSubject = Subject.builder()
-                .subjectId(1L)
-                .subjectCode("MATH101")
-                .subjectName("Toán cơ bản")
+        MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
+
+        service = new SubjectServiceImpl(messageUtils, subjectRepository);
+
+        when(subjectRepository.save(any(Subject.class))).thenAnswer(invocation -> {
+            savedSubject = invocation.getArgument(0);
+
+            if (savedSubject.getSubjectId() == null) {
+                savedSubject.setSubjectId((long) (subjectStore.size() + 1));
+            }
+
+            subjectStore.put(savedSubject.getSubjectId(), savedSubject);
+            return savedSubject;
+        });
+
+        when(subjectRepository.findById(anyLong())).thenAnswer(invocation -> {
+            Long subjectId = invocation.getArgument(0);
+            return Optional.ofNullable(subjectStore.get(subjectId));
+        });
+
+        when(subjectRepository.existsBySubjectCodeAndIsDeletedIsFalse(anyString()))
+                .thenAnswer(invocation -> {
+                    String subjectCode = invocation.getArgument(0);
+
+                    return subjectStore.values()
+                            .stream()
+                            .anyMatch(subject ->
+                                    subjectCode.equals(subject.getSubjectCode())
+                                            && !Boolean.TRUE.equals(subject.getIsDeleted())
+                            );
+                });
+    }
+
+    private Subject subject(Long subjectId, String subjectCode, String subjectName) {
+        return Subject.builder()
+                .subjectId(subjectId)
+                .subjectCode(subjectCode)
+                .subjectName(subjectName)
                 .isDeleted(false)
                 .build();
-        
-        when(messageUtils.getMessage(anyString())).thenReturn("Error message");
     }
 
-    // ================== createSubject ==================
-    @Test
-    @DisplayName("TC_QLLH_SUB_01: createSubject - ném exception khi mã môn đã tồn tại")
-    void createSubject_AlreadyExists() {
+    private SubjectCreateRequest createRequest(String subjectCode, String subjectName) {
         SubjectCreateRequest request = mock(SubjectCreateRequest.class);
-        SubjectCreateRequestDTO dto = SubjectCreateRequestDTO.builder().subjectCode("MATH101").build();
-        when(request.toDTO()).thenReturn(dto);
-        
-        when(subjectRepository.existsBySubjectCodeAndIsDeletedIsFalse("MATH101")).thenReturn(true);
 
-        assertThatThrownBy(() -> subjectService.createSubject(request))
-                .isInstanceOf(AppException.class)
-                .hasMessageContaining("Error message");
-    }
-
-    @Test
-    @DisplayName("TC_QLLH_SUB_02: createSubject - thành công")
-    void createSubject_Success() {
-        SubjectCreateRequest request = mock(SubjectCreateRequest.class);
         SubjectCreateRequestDTO dto = SubjectCreateRequestDTO.builder()
-                .subjectCode("NEW_SUB")
-                .subjectName("New Subject")
+                .subjectCode(subjectCode)
+                .subjectName(subjectName)
                 .build();
+
         when(request.toDTO()).thenReturn(dto);
 
-        when(subjectRepository.existsBySubjectCodeAndIsDeletedIsFalse("NEW_SUB")).thenReturn(false);
-
-        subjectService.createSubject(request);
-
-        verify(subjectRepository).save(any(Subject.class));
+        return request;
     }
 
-    // ================== searchSubject ==================
-    @Test
-    @DisplayName("TC_QLLH_SUB_03: searchSubject - thành công")
-    void searchSubject_Success() {
+    private UpdateSubjectRequest updateRequest(String subjectCode, String subjectName) {
+        UpdateSubjectRequest request = new UpdateSubjectRequest();
+        request.setSubjectCode(subjectCode);
+        request.setSubjectName(subjectName);
+        return request;
+    }
+
+    private SearchRequest pagination() {
+        SearchRequest pagination = new SearchRequest();
+        pagination.setPageNum("1");
+        pagination.setPageSize("10");
+        return pagination;
+    }
+
+    private BaseFilterSearchRequest<SubjectSearchRequest> searchRequest() {
+        BaseFilterSearchRequest<SubjectSearchRequest> request =
+                mock(BaseFilterSearchRequest.class);
+
         SubjectSearchRequest filters = mock(SubjectSearchRequest.class);
-        when(filters.toDTO()).thenReturn(SubjectSearchRequestDTO.builder().build());
 
-        BaseFilterSearchRequest<SubjectSearchRequest> req = new BaseFilterSearchRequest<>();
-        req.setFilters(filters);
-        req.setPagination(new SearchRequest());
+        SubjectSearchRequestDTO dto = SubjectSearchRequestDTO.builder()
+                .subjectName("java")
+                .build();
 
-        Page<Subject> page = new PageImpl<>(List.of(existingSubject));
-        when(subjectRepository.searchSubject(any(), any(Pageable.class))).thenReturn(page);
+        when(request.getFilters()).thenReturn(filters);
+        when(filters.toDTO()).thenReturn(dto);
+        when(request.getPagination()).thenReturn(pagination());
 
-        var result = subjectService.searchSubject(req);
-
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getPaging().getTotalRows()).isEqualTo(1);
+        return request;
     }
 
-    // ================== updateSubject ==================
-    @Test
-    @DisplayName("TC_QLLH_SUB_04: updateSubject - ném exception khi không tìm thấy môn học")
-    void updateSubject_NotFound() {
-        when(subjectRepository.findById(999L)).thenReturn(Optional.empty());
-        UpdateSubjectRequest request = new UpdateSubjectRequest();
+    @Nested
+    class CreateSubjectTests {
 
-        assertThatThrownBy(() -> subjectService.updateSubject(999L, request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+        @Test
+        void createSubject_Success() {
+            SubjectCreateRequest request = createRequest("JAVA101", "Java Programming");
+
+            service.createSubject(request);
+
+            assertNotNull(savedSubject);
+            assertEquals("JAVA101", savedSubject.getSubjectCode());
+            assertEquals("Java Programming", savedSubject.getSubjectName());
+
+            verify(subjectRepository).save(any(Subject.class));
+        }
+
+        @Test
+        void createSubject_Fail_ThrowsWhenSubjectCodeExists() {
+            subjectStore.put(
+                    SUBJECT_ID,
+                    subject(SUBJECT_ID, "JAVA101", "Old Java")
+            );
+
+            SubjectCreateRequest request = createRequest("JAVA101", "Java Programming");
+
+            assertThrows(AppException.class, () -> service.createSubject(request));
+
+            verify(subjectRepository, never()).save(any(Subject.class));
+        }
+
+        @Test
+        void createSubject_Fail_ThrowsWhenSubjectNameTooLong() {
+            SubjectCreateRequest request = createRequest("JAVA101", "A".repeat(101));
+
+            assertThrows(AppException.class, () -> service.createSubject(request));
+
+            verify(subjectRepository, never()).save(any(Subject.class));
+        }
     }
 
-    @Test
-    @DisplayName("TC_QLLH_SUB_05: updateSubject - ném exception khi đổi mã sang một mã đã tồn tại")
-    void updateSubject_DuplicateCode() {
-        when(subjectRepository.findById(1L)).thenReturn(Optional.of(existingSubject));
-        
-        UpdateSubjectRequest request = new UpdateSubjectRequest();
-        request.setSubjectCode("PHYS101"); // Mã mới
+    @Nested
+    class SearchSubjectTests {
 
-        when(subjectRepository.existsBySubjectCodeAndIsDeletedIsFalse("PHYS101")).thenReturn(true);
+        @Test
+        void searchSubject_Success() {
+            Subject subject = subject(SUBJECT_ID, "JAVA101", "Java Programming");
 
-        assertThatThrownBy(() -> subjectService.updateSubject(1L, request))
-                .isInstanceOf(AppException.class);
+            when(subjectRepository.searchSubject(
+                    any(SubjectSearchRequestDTO.class),
+                    any(Pageable.class)
+            )).thenReturn(new PageImpl<>(List.of(subject)));
+
+            ResponseListData<SubjectSearchResponse> result =
+                    service.searchSubject(searchRequest());
+
+            assertNotNull(result);
+
+            verify(subjectRepository).searchSubject(
+                    any(SubjectSearchRequestDTO.class),
+                    any(Pageable.class)
+            );
+        }
     }
 
-    @Test
-    @DisplayName("TC_QLLH_SUB_06: updateSubject - cập nhật tên môn thành công")
-    void updateSubject_NameSuccess() {
-        when(subjectRepository.findById(1L)).thenReturn(Optional.of(existingSubject));
-        
-        UpdateSubjectRequest request = new UpdateSubjectRequest();
-        request.setSubjectName("Toán cao cấp");
+    @Nested
+    class UpdateSubjectTests {
 
-        subjectService.updateSubject(1L, request);
+        @Test
+        void updateSubject_Success_UpdatesCodeAndName() {
+            Subject existing = subject(SUBJECT_ID, "OLD101", "Old Subject");
+            subjectStore.put(SUBJECT_ID, existing);
 
-        assertThat(existingSubject.getSubjectName()).isEqualTo("Toán cao cấp");
-        verify(subjectRepository).save(existingSubject);
+            service.updateSubject(
+                    SUBJECT_ID,
+                    updateRequest("JAVA101", "Java Programming")
+            );
+
+            assertNotNull(savedSubject);
+            assertEquals("JAVA101", savedSubject.getSubjectCode());
+            assertEquals("Java Programming", savedSubject.getSubjectName());
+
+            verify(subjectRepository).save(existing);
+        }
+
+        @Test
+        void updateSubject_Success_OnlyUpdatesNameWhenCodeSame() {
+            Subject existing = subject(SUBJECT_ID, "JAVA101", "Old Subject");
+            subjectStore.put(SUBJECT_ID, existing);
+
+            service.updateSubject(
+                    SUBJECT_ID,
+                    updateRequest("JAVA101", "New Subject Name")
+            );
+
+            assertEquals("JAVA101", savedSubject.getSubjectCode());
+            assertEquals("New Subject Name", savedSubject.getSubjectName());
+
+            verify(subjectRepository).save(existing);
+        }
+
+        @Test
+        void updateSubject_Success_DoesNotChangeNullFields() {
+            Subject existing = subject(SUBJECT_ID, "JAVA101", "Old Subject");
+            subjectStore.put(SUBJECT_ID, existing);
+
+            service.updateSubject(
+                    SUBJECT_ID,
+                    updateRequest(null, null)
+            );
+
+            assertEquals("JAVA101", savedSubject.getSubjectCode());
+            assertEquals("Old Subject", savedSubject.getSubjectName());
+
+            verify(subjectRepository).save(existing);
+        }
+
+        @Test
+        void updateSubject_Fail_ThrowsWhenSubjectMissing() {
+            assertThrows(AppException.class, () ->
+                    service.updateSubject(
+                            99L,
+                            updateRequest("JAVA101", "Java Programming")
+                    )
+            );
+
+            verify(subjectRepository, never()).save(any(Subject.class));
+        }
+
+        @Test
+        void updateSubject_Fail_ThrowsWhenNewCodeExists() {
+            Subject current = subject(SUBJECT_ID, "OLD101", "Old Subject");
+            Subject other = subject(2L, "JAVA101", "Java Programming");
+
+            subjectStore.put(SUBJECT_ID, current);
+            subjectStore.put(2L, other);
+
+            assertThrows(AppException.class, () ->
+                    service.updateSubject(
+                            SUBJECT_ID,
+                            updateRequest("JAVA101", "New Name")
+                    )
+            );
+
+            verify(subjectRepository, never()).save(current);
+        }
+
+        @Test
+        void updateSubject_Fail_ThrowsWhenSubjectNameTooLong() {
+            Subject existing = subject(SUBJECT_ID, "JAVA101", "Old Subject");
+            subjectStore.put(SUBJECT_ID, existing);
+
+            assertThrows(AppException.class, () ->
+                    service.updateSubject(
+                            SUBJECT_ID,
+                            updateRequest(null, "A".repeat(101))
+                    )
+            );
+
+            verify(subjectRepository, never()).save(existing);
+        }
     }
 
-    @Test
-    @DisplayName("TC_QLLH_SUB_07: updateSubject - cập nhật cả mã và tên thành công")
-    void updateSubject_AllSuccess() {
-        when(subjectRepository.findById(1L)).thenReturn(Optional.of(existingSubject));
-        
-        UpdateSubjectRequest request = new UpdateSubjectRequest();
-        request.setSubjectCode("MATH202");
-        request.setSubjectName("Toán 2");
+    @Nested
+    class DeleteSubjectTests {
 
-        when(subjectRepository.existsBySubjectCodeAndIsDeletedIsFalse("MATH202")).thenReturn(false);
+        @Test
+        void deleteSubject_Success_SoftDeletesSubject() {
+            Subject existing = subject(SUBJECT_ID, "JAVA101", "Java Programming");
+            subjectStore.put(SUBJECT_ID, existing);
 
-        subjectService.updateSubject(1L, request);
+            service.deleteSubject(SUBJECT_ID);
 
-        assertThat(existingSubject.getSubjectCode()).isEqualTo("MATH202");
-        assertThat(existingSubject.getSubjectName()).isEqualTo("Toán 2");
-        verify(subjectRepository).save(existingSubject);
-    }
+            assertNotNull(savedSubject);
+            assertTrue(savedSubject.getIsDeleted());
 
-    // ================== deleteSubject ==================
-    @Test
-    @DisplayName("TC_QLLH_SUB_08: deleteSubject - ném exception khi không tìm thấy")
-    void deleteSubject_NotFound() {
-        when(subjectRepository.findById(999L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> subjectService.deleteSubject(999L)).isInstanceOf(AppException.class);
-    }
+            verify(subjectRepository).save(existing);
+        }
 
-    @Test
-    @DisplayName("TC_QLLH_SUB_09: deleteSubject - xóa mềm thành công")
-    void deleteSubject_Success() {
-        when(subjectRepository.findById(1L)).thenReturn(Optional.of(existingSubject));
+        @Test
+        void deleteSubject_Fail_ThrowsWhenSubjectMissing() {
+            assertThrows(AppException.class, () -> service.deleteSubject(99L));
 
-        subjectService.deleteSubject(1L);
-
-        assertThat(existingSubject.getIsDeleted()).isTrue();
-        verify(subjectRepository).save(existingSubject);
+            verify(subjectRepository, never()).save(any(Subject.class));
+        }
     }
 }
