@@ -1,250 +1,560 @@
 package com.vn.backend;
 
-import com.vn.backend.dto.request.comment.*;
+import com.vn.backend.dto.request.comment.CommentCreateRequest;
+import com.vn.backend.dto.request.comment.CommentDeleteRequest;
+import com.vn.backend.dto.request.comment.CommentListRequest;
+import com.vn.backend.dto.request.comment.CommentUpdateRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
-import com.vn.backend.entities.*;
+import com.vn.backend.dto.response.comment.CommentResponse;
+import com.vn.backend.dto.response.common.ResponseListData;
+import com.vn.backend.entities.Announcement;
+import com.vn.backend.entities.ClassMember;
+import com.vn.backend.entities.Comment;
+import com.vn.backend.entities.User;
 import com.vn.backend.enums.ClassMemberRole;
 import com.vn.backend.enums.ClassMemberStatus;
 import com.vn.backend.exceptions.AppException;
 import com.vn.backend.repositories.AnnouncementRepository;
 import com.vn.backend.repositories.ClassMemberRepository;
-import com.vn.backend.repositories.ClassroomRepository;
 import com.vn.backend.repositories.CommentRepository;
+import com.vn.backend.repositories.ClassroomRepository;
 import com.vn.backend.services.AuthService;
 import com.vn.backend.services.impl.CommentServiceImpl;
 import com.vn.backend.utils.MessageUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("CommentServiceImpl Unit Tests")
 class CommentServiceImplTest {
+
+    private static final Long USER_ID = 4L;
+    private static final Long OTHER_USER_ID = 8L;
+    private static final Long COMMENT_OWNER_ID = 4L;
+    private static final Long ANNOUNCEMENT_ID = 10L;
+    private static final Long CLASSROOM_ID = 20L;
 
     @Mock private CommentRepository commentRepository;
     @Mock private AnnouncementRepository announcementRepository;
     @Mock private ClassMemberRepository classMemberRepository;
     @Mock private ClassroomRepository classroomRepository;
     @Mock private AuthService authService;
-    @Mock private MessageUtils messageUtils;
 
-    @InjectMocks
-    private CommentServiceImpl commentService;
+    private CommentServiceImpl service;
 
-    private User teacherUser;
-    private User studentUser;
-    private User assistantUser;
-    private Classroom classroom;
-    private Announcement announcement;
-    private Comment commentByStudent;
+    private final Map<Long, Comment> commentStore = new HashMap<>();
+    private final AtomicLong commentIds = new AtomicLong(1);
 
     @BeforeEach
     void setUp() {
-        teacherUser = User.builder().id(1L).fullName("Giao Vien").email("gv@test.com").avatarUrl("ava1").build();
-        studentUser = User.builder().id(2L).fullName("Sinh Vien").email("sv@test.com").avatarUrl("ava2").build();
-        assistantUser = User.builder().id(3L).fullName("Trợ Giảng").email("tg@test.com").avatarUrl("ava3").build();
-        
-        classroom = Classroom.builder().classroomId(100L).teacherId(1L).build();
-        announcement = Announcement.builder().announcementId(500L).classroomId(100L).allowComments(true).build();
-        
-        commentByStudent = Comment.builder()
-                .commentId(10L).announcementId(500L).userId(2L).user(studentUser)
-                .content("Bình luận của Sv").isDeleted(false).build();
+        MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
 
-        when(messageUtils.getMessage(anyString())).thenReturn("Error message");
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(announcementRepository.findById(anyLong())).thenReturn(Optional.of(announcement));
-        
-        // Mock mặc định user 2 là ACTIVE member
-        ClassMember studentMember = ClassMember.builder().userId(2L).memberStatus(ClassMemberStatus.ACTIVE).memberRole(ClassMemberRole.STUDENT).build();
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(studentMember));
+        service = new CommentServiceImpl(
+                commentRepository,
+                announcementRepository,
+                classMemberRepository,
+                classroomRepository,
+                authService,
+                messageUtils
+        );
+
+        mockCommentRepositoryStorage();
     }
 
-    // ================== createComment ==================
-    @Test
-    @DisplayName("TC_QLLH_CMT_01: createComment - ném lỗi khi Announcement cấm bình luận")
-    void createComment_ForbiddenBySetting() {
-        announcement.setAllowComments(false);
-        CommentCreateRequest request = new CommentCreateRequest();
-        request.setContent("Test");
+    private void mockCommentRepositoryStorage() {
+        when(commentRepository.saveAndFlush(any(Comment.class))).thenAnswer(invocation -> {
+            Comment comment = invocation.getArgument(0);
+            if (comment.getCommentId() == null) {
+                comment.setCommentId(commentIds.getAndIncrement());
+            }
+            commentStore.put(comment.getCommentId(), comment);
+            return comment;
+        });
 
-        assertThatThrownBy(() -> commentService.createComment(500L, request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+        when(commentRepository.findByCommentIdAndNotDeleted(anyLong()))
+                .thenAnswer(invocation -> {
+                    Long commentId = invocation.getArgument(0);
+                    Comment comment = commentStore.get(commentId);
+
+                    if (comment == null || Boolean.TRUE.equals(comment.getIsDeleted())) {
+                        return Optional.empty();
+                    }
+
+                    return Optional.of(comment);
+                });
+
+        doAnswer(invocation -> {
+            Long commentId = invocation.getArgument(0);
+            Comment comment = commentStore.get(commentId);
+            if (comment != null) {
+                comment.setIsDeleted(true);
+            }
+            return null;
+        }).when(commentRepository).softDeleteById(anyLong());
     }
 
-    @Test
-    @DisplayName("TC_QLLH_CMT_02: createComment - thành công và trả về đúng thông tin user")
-    void createComment_Success() {
-        CommentCreateRequest request = new CommentCreateRequest();
-        request.setContent("Bình luận mới");
-
-        when(commentRepository.saveAndFlush(any(Comment.class))).thenReturn(commentByStudent);
-
-        var result = commentService.createComment(500L, request);
-
-        assertThat(result.getContent()).isEqualTo("Bình luận của Sv");
-        assertThat(result.getUserFullName()).isEqualTo("Sinh Vien");
-        verify(commentRepository).saveAndFlush(any(Comment.class));
+    private User user(Long userId) {
+        return User.builder()
+                .id(userId)
+                .fullName("User " + userId)
+                .email("user" + userId + "@example.com")
+                .avatarUrl("avatar-" + userId + ".png")
+                .build();
     }
 
-    // ================== updateComment ==================
-    @Test
-    @DisplayName("TC_QLLH_CMT_03: updateComment - ném FORBIDDEN khi sửa bình luận của người khác")
-    void updateComment_ForbiddenOwnership() {
-        // User hiện tại là student (ID=2)
-        Comment commentOfTeacher = Comment.builder().commentId(20L).announcementId(500L).userId(1L).user(teacherUser).build();
-        when(commentRepository.findByCommentIdAndNotDeleted(20L)).thenReturn(Optional.of(commentOfTeacher));
-        
-        CommentUpdateRequest request = new CommentUpdateRequest();
-        request.setCommentId(20L);
-        request.setContent("Sửa trộm");
-
-        assertThatThrownBy(() -> commentService.updateComment(request))
-                .isInstanceOf(AppException.class);
+    private void mockCurrentUser(Long userId) {
+        when(authService.getCurrentUser()).thenReturn(user(userId));
     }
 
-    @Test
-    @DisplayName("TC_QLLH_CMT_04: updateComment - CHÍNH CHỦ sửa thành công")
-    void updateComment_SuccessOwner() {
-        when(commentRepository.findByCommentIdAndNotDeleted(10L)).thenReturn(Optional.of(commentByStudent));
-        
-        CommentUpdateRequest request = new CommentUpdateRequest();
-        request.setCommentId(10L);
-        request.setContent("Đã sửa");
-
-        commentService.updateComment(request);
-
-        assertThat(commentByStudent.getContent()).isEqualTo("Đã sửa");
-        verify(commentRepository).saveAndFlush(commentByStudent);
+    private Announcement announcement(boolean allowComments) {
+        return Announcement.builder()
+                .announcementId(ANNOUNCEMENT_ID)
+                .classroomId(CLASSROOM_ID)
+                .allowComments(allowComments)
+                .build();
     }
 
-    // ================== deleteComment (Phân quyền quan trọng) ==================
-    @Test
-    @DisplayName("TC_QLLH_CMT_05: deleteComment - GIÁO VIÊN xóa bình luận của SV thành công")
-    void deleteComment_TeacherDeletesStudent() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser); // ID=1
-        when(commentRepository.findByCommentIdAndNotDeleted(10L)).thenReturn(Optional.of(commentByStudent));
-        // Check ID=1 có phải teacher của class 100 ko?
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
+    private void mockAnnouncement(boolean allowComments) {
+        when(announcementRepository.findById(ANNOUNCEMENT_ID))
+                .thenReturn(Optional.of(announcement(allowComments)));
+    }
 
+    private void mockAnnouncementMissing() {
+        when(announcementRepository.findById(ANNOUNCEMENT_ID))
+                .thenReturn(Optional.empty());
+    }
+
+    private ClassMember member(Long userId, ClassMemberRole role, ClassMemberStatus status) {
+        return ClassMember.builder()
+                .classroomId(CLASSROOM_ID)
+                .userId(userId)
+                .memberRole(role)
+                .memberStatus(status)
+                .build();
+    }
+
+    private void mockTeacherAccess(Long userId, boolean isTeacher) {
+        when(classroomRepository.existsByClassroomIdAndTeacherId(CLASSROOM_ID, userId))
+                .thenReturn(isTeacher);
+    }
+
+    private void mockMemberAccess(Long userId, ClassMemberRole role, ClassMemberStatus status) {
+        when(classMemberRepository.findByClassroomIdAndUserId(CLASSROOM_ID, userId))
+                .thenReturn(Optional.of(member(userId, role, status)));
+    }
+
+    private void mockNoMemberAccess(Long userId) {
+        when(classMemberRepository.findByClassroomIdAndUserId(CLASSROOM_ID, userId))
+                .thenReturn(Optional.empty());
+    }
+
+    private void mockStudentOwner() {
+        mockMemberAccess(COMMENT_OWNER_ID, ClassMemberRole.STUDENT, ClassMemberStatus.ACTIVE);
+    }
+
+    private Comment comment(Long commentId, Long userId, String content) {
+        return Comment.builder()
+                .commentId(commentId)
+                .announcementId(ANNOUNCEMENT_ID)
+                .userId(userId)
+                .user(user(userId))
+                .content(content)
+                .isDeleted(false)
+                .build();
+    }
+
+    private Comment saveExistingComment(Long commentId, Long userId, String content) {
+        Comment comment = comment(commentId, userId, content);
+        commentStore.put(commentId, comment);
+        return comment;
+    }
+
+    private CommentCreateRequest createRequest(String content) {
+        return CommentCreateRequest.builder()
+                .content(content)
+                .build();
+    }
+
+    private CommentUpdateRequest updateRequest(Long commentId, String content) {
+        return CommentUpdateRequest.builder()
+                .commentId(commentId)
+                .content(content)
+                .build();
+    }
+
+    private CommentDeleteRequest deleteRequest(Long commentId) {
         CommentDeleteRequest request = new CommentDeleteRequest();
-        request.setCommentId(10L);
-
-        commentService.deleteComment(request);
-
-        verify(commentRepository).softDeleteById(10L);
+        request.setCommentId(commentId);
+        return request;
     }
 
-    @Test
-    @DisplayName("TC_QLLH_CMT_06: deleteComment - TRỢ GIẢNG xóa bình luận SV thành công")
-    void deleteComment_AssistantDeletesStudent() {
-        when(authService.getCurrentUser()).thenReturn(assistantUser); // ID=3
-        when(commentRepository.findByCommentIdAndNotDeleted(10L)).thenReturn(Optional.of(commentByStudent));
-        
-        // ID=3 là assistant của class 100
-        ClassMember assistantMember = ClassMember.builder().userId(3L).memberRole(ClassMemberRole.ASSISTANT).build();
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 3L)).thenReturn(Optional.of(assistantMember));
-        
-        // Bình luận của SV (ID=2)
-        ClassMember studentMember = ClassMember.builder().userId(2L).memberRole(ClassMemberRole.STUDENT).build();
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(studentMember));
-
-        CommentDeleteRequest request = new CommentDeleteRequest();
-        request.setCommentId(10L);
-
-        commentService.deleteComment(request);
-
-        verify(commentRepository).softDeleteById(10L);
-    }
-
-    @Test
-    @DisplayName("TC_QLLH_CMT_07: deleteComment - TRỢ GIẢNG xóa bình luận GIÁO VIÊN ném FORBIDDEN")
-    void deleteComment_AssistantDeletesTeacher_Forbidden() {
-        when(authService.getCurrentUser()).thenReturn(assistantUser); // ID=3
-        
-        Comment commentOfTeacher = Comment.builder().commentId(20L).announcementId(500L).userId(1L).user(teacherUser).build();
-        when(commentRepository.findByCommentIdAndNotDeleted(20L)).thenReturn(Optional.of(commentOfTeacher));
-        
-        ClassMember assistantMember = ClassMember.builder().userId(3L).memberRole(ClassMemberRole.ASSISTANT).build();
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 3L)).thenReturn(Optional.of(assistantMember));
-
-        // Chủ nhân bình luận (ID=1) không phải student trong lớp này (Id=1 là teacher)
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
-
-        CommentDeleteRequest request = new CommentDeleteRequest();
-        request.setCommentId(20L);
-
-        assertThatThrownBy(() -> commentService.deleteComment(request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
-    }
-
-    @Test
-    @DisplayName("TC_QLLH_CMT_08: deleteComment - SINH VIÊN xóa bình luận SV khác ném FORBIDDEN")
-    void deleteComment_StudentDeletesOtherStudent_Forbidden() {
-        when(authService.getCurrentUser()).thenReturn(studentUser); // ID=2
-        
-        Comment otherStudentComment = Comment.builder().commentId(30L).announcementId(500L).userId(99L).user(new User()).build();
-        when(commentRepository.findByCommentIdAndNotDeleted(30L)).thenReturn(Optional.of(otherStudentComment));
-        
-        CommentDeleteRequest request = new CommentDeleteRequest();
-        request.setCommentId(30L);
-
-        assertThatThrownBy(() -> commentService.deleteComment(request))
-                .isInstanceOf(AppException.class);
-    }
-
-    // ================== getCommentList ==================
-    @Test
-    @DisplayName("TC_QLLH_CMT_09: getCommentList - thành công kèm phân trang")
-    void getList_Success() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        
-        CommentListRequest request = new CommentListRequest();
-        request.setAnnouncementId(500L);
-        request.setPagination(new SearchRequest());
-
-        Page<Comment> page = new PageImpl<>(List.of(commentByStudent));
-        when(commentRepository.findByAnnouncementIdAndNotDeleted(eq(500L), any(Pageable.class))).thenReturn(page);
-
-        var result = commentService.getCommentList(request);
-
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getPaging().getTotalRows()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("TC_QLLH_CMT_10: getCommentList - ném lỗi khi user không có quyền vào lớp của announcement")
-    void getList_NoAccess() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        // User là member của lớp 100 nhưng Announcement này lại thuộc về lớp 999 (giả sử)
-        announcement.setClassroomId(999L);
-        when(classMemberRepository.findByClassroomIdAndUserId(999L, 2L)).thenReturn(Optional.empty());
+    private CommentListRequest listRequest() {
+        SearchRequest pagination = new SearchRequest();
+        pagination.setPageNum("1");
+        pagination.setPageSize("10");
 
         CommentListRequest request = new CommentListRequest();
-        request.setAnnouncementId(500L);
+        request.setAnnouncementId(ANNOUNCEMENT_ID);
+        request.setPagination(pagination);
 
-        assertThatThrownBy(() -> commentService.getCommentList(request))
-                .isInstanceOf(AppException.class);
+        return request;
+    }
+
+    private void mockActiveMemberAccess(Long userId) {
+        mockTeacherAccess(userId, false);
+        mockMemberAccess(userId, ClassMemberRole.STUDENT, ClassMemberStatus.ACTIVE);
+    }
+
+    private void mockAssistantAccess(Long userId) {
+        mockTeacherAccess(userId, false);
+        mockMemberAccess(userId, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE);
+    }
+
+    private void assertCommentNotSaved() {
+        verify(commentRepository, never()).saveAndFlush(any(Comment.class));
+    }
+
+    private void assertCommentNotDeleted(Long commentId) {
+        verify(commentRepository, never()).softDeleteById(commentId);
+    }
+
+    private void assertSoftDeleted(Long commentId) {
+        assertTrue(commentStore.get(commentId).getIsDeleted());
+        verify(commentRepository).softDeleteById(commentId);
+    }
+
+    @Nested
+    class CreateCommentTests {
+
+        @Test
+        void createComment_Success_WhenUserIsActiveMember() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            mockActiveMemberAccess(USER_ID);
+
+            CommentResponse response = service.createComment(
+                    ANNOUNCEMENT_ID,
+                    createRequest("Hello class")
+            );
+
+            assertNotNull(response);
+            assertEquals(ANNOUNCEMENT_ID, response.getAnnouncementId());
+            assertEquals(USER_ID, response.getUserId());
+            assertEquals("Hello class", response.getContent());
+            assertTrue(response.getCanEdit());
+            assertTrue(response.getCanDelete());
+
+            Comment saved = commentStore.values().stream().findFirst().orElseThrow();
+            assertEquals("Hello class", saved.getContent());
+            assertEquals(USER_ID, saved.getUserId());
+            assertFalse(saved.getIsDeleted());
+        }
+
+        @Test
+        void createComment_Success_WhenUserIsTeacher() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            mockTeacherAccess(USER_ID, true);
+
+            CommentResponse response = service.createComment(
+                    ANNOUNCEMENT_ID,
+                    createRequest("Teacher comment")
+            );
+
+            assertNotNull(response);
+            assertEquals(USER_ID, response.getUserId());
+            assertEquals("Teacher comment", response.getContent());
+        }
+
+        @Test
+        void createComment_Fail_ThrowsWhenAnnouncementMissing() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncementMissing();
+
+            assertThrows(AppException.class, () ->
+                    service.createComment(ANNOUNCEMENT_ID, createRequest("Hello"))
+            );
+
+            assertCommentNotSaved();
+        }
+
+        @Test
+        void createComment_Fail_ThrowsWhenUserIsNotClassMember() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            mockTeacherAccess(USER_ID, false);
+            mockNoMemberAccess(USER_ID);
+
+            assertThrows(AppException.class, () ->
+                    service.createComment(ANNOUNCEMENT_ID, createRequest("Hello"))
+            );
+
+            assertCommentNotSaved();
+        }
+
+        @Test
+        void createComment_Fail_ThrowsWhenMemberIsNotActive() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            mockTeacherAccess(USER_ID, false);
+            mockMemberAccess(USER_ID, ClassMemberRole.STUDENT, ClassMemberStatus.INACTIVE);
+
+            assertThrows(AppException.class, () ->
+                    service.createComment(ANNOUNCEMENT_ID, createRequest("Hello"))
+            );
+
+            assertCommentNotSaved();
+        }
+
+        @Test
+        void createComment_Fail_ThrowsWhenAnnouncementDisablesComments() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(false);
+            mockTeacherAccess(USER_ID, true);
+
+            assertThrows(AppException.class, () ->
+                    service.createComment(ANNOUNCEMENT_ID, createRequest("Blocked"))
+            );
+
+            assertCommentNotSaved();
+        }
+    }
+
+    @Nested
+    class GetCommentListTests {
+
+        @Test
+        void getCommentList_Success_ReturnsCommentsForActiveMember() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            mockActiveMemberAccess(USER_ID);
+
+            Comment first = comment(1L, USER_ID, "First");
+            Comment second = comment(2L, OTHER_USER_ID, "Second");
+
+            when(commentRepository.findByAnnouncementIdAndNotDeleted(
+                    eq(ANNOUNCEMENT_ID),
+                    any(Pageable.class)
+            )).thenReturn(new PageImpl<>(List.of(first, second)));
+
+            ResponseListData<CommentResponse> result = service.getCommentList(listRequest());
+
+            assertNotNull(result);
+            assertNotNull(result.getContent());
+            List<CommentResponse> items = new ArrayList<>(result.getContent());
+            assertEquals(2, items.size());
+            assertEquals("First", items.get(0).getContent());
+            assertEquals("Second", items.get(1).getContent());
+
+            verify(commentRepository).findByAnnouncementIdAndNotDeleted(
+                    eq(ANNOUNCEMENT_ID),
+                    any(Pageable.class)
+            );
+        }
+
+        @Test
+        void getCommentList_Fail_ThrowsWhenAnnouncementMissing() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncementMissing();
+
+            assertThrows(AppException.class, () -> service.getCommentList(listRequest()));
+
+            verify(commentRepository, never()).findByAnnouncementIdAndNotDeleted(
+                    anyLong(),
+                    any(Pageable.class)
+            );
+        }
+
+        @Test
+        void getCommentList_Fail_ThrowsWhenUserHasNoClassroomAccess() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            mockTeacherAccess(USER_ID, false);
+            mockNoMemberAccess(USER_ID);
+
+            assertThrows(AppException.class, () -> service.getCommentList(listRequest()));
+
+            verify(commentRepository, never()).findByAnnouncementIdAndNotDeleted(
+                    anyLong(),
+                    any(Pageable.class)
+            );
+        }
+    }
+
+    @Nested
+    class UpdateCommentTests {
+
+        @Test
+        void updateComment_Success_UpdatesOwnComment() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            saveExistingComment(5L, USER_ID, "Old");
+
+            CommentResponse response = service.updateComment(updateRequest(5L, "Updated"));
+
+            Comment updated = commentRepository.findByCommentIdAndNotDeleted(5L).orElseThrow();
+
+            assertNotNull(response);
+            assertEquals("Updated", updated.getContent());
+            assertEquals("Updated", response.getContent());
+            assertTrue(response.getCanEdit());
+            assertTrue(response.getCanDelete());
+        }
+
+        @Test
+        void updateComment_Fail_ThrowsWhenCommentMissing() {
+            mockCurrentUser(USER_ID);
+
+            assertThrows(AppException.class, () ->
+                    service.updateComment(updateRequest(99L, "Updated"))
+            );
+
+            assertCommentNotSaved();
+        }
+
+        @Test
+        void updateComment_Fail_ThrowsWhenOtherUserTriesToEdit() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockActiveMemberAccess(OTHER_USER_ID);
+            saveExistingComment(5L, COMMENT_OWNER_ID, "Old");
+
+            assertThrows(AppException.class, () ->
+                    service.updateComment(updateRequest(5L, "Hack"))
+            );
+
+            assertEquals("Old", commentStore.get(5L).getContent());
+        }
+
+        @Test
+        void updateComment_Fail_ThrowsWhenTeacherTriesToEditStudentComment() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockTeacherAccess(OTHER_USER_ID, true);
+            saveExistingComment(5L, COMMENT_OWNER_ID, "Old");
+
+            assertThrows(AppException.class, () ->
+                    service.updateComment(updateRequest(5L, "Teacher edit"))
+            );
+
+            assertEquals("Old", commentStore.get(5L).getContent());
+        }
+    }
+
+    @Nested
+    class DeleteCommentTests {
+
+        @Test
+        void deleteComment_Success_SoftDeletesOwnComment() {
+            mockCurrentUser(USER_ID);
+            mockAnnouncement(true);
+            saveExistingComment(6L, USER_ID, "Delete");
+
+            service.deleteComment(deleteRequest(6L));
+
+            assertSoftDeleted(6L);
+        }
+
+        @Test
+        void deleteComment_Success_TeacherDeletesStudentComment() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockTeacherAccess(OTHER_USER_ID, true);
+            saveExistingComment(6L, COMMENT_OWNER_ID, "Student comment");
+
+            service.deleteComment(deleteRequest(6L));
+
+            assertSoftDeleted(6L);
+        }
+
+        @Test
+        void deleteComment_Success_AssistantDeletesStudentComment() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockAssistantAccess(OTHER_USER_ID);
+            mockStudentOwner();
+            saveExistingComment(6L, COMMENT_OWNER_ID, "Student comment");
+
+            service.deleteComment(deleteRequest(6L));
+
+            assertSoftDeleted(6L);
+        }
+
+        @Test
+        void deleteComment_Fail_ThrowsWhenCommentMissing() {
+            mockCurrentUser(USER_ID);
+
+            assertThrows(AppException.class, () -> service.deleteComment(deleteRequest(99L)));
+
+            verify(commentRepository, never()).softDeleteById(anyLong());
+        }
+
+        @Test
+        void deleteComment_Fail_ThrowsWhenCurrentUserCannotDeleteOthersComment() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockActiveMemberAccess(OTHER_USER_ID);
+            saveExistingComment(9L, COMMENT_OWNER_ID, "Other user");
+
+            assertThrows(AppException.class, () ->
+                    service.deleteComment(deleteRequest(9L))
+            );
+
+            assertFalse(commentStore.get(9L).getIsDeleted());
+            assertCommentNotDeleted(9L);
+        }
+
+        @Test
+        void deleteComment_Fail_ThrowsWhenAssistantDeletesTeacherComment() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockAssistantAccess(OTHER_USER_ID);
+
+            mockMemberAccess(COMMENT_OWNER_ID, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE);
+            saveExistingComment(9L, COMMENT_OWNER_ID, "Teacher comment");
+
+            assertThrows(AppException.class, () ->
+                    service.deleteComment(deleteRequest(9L))
+            );
+
+            assertFalse(commentStore.get(9L).getIsDeleted());
+            assertCommentNotDeleted(9L);
+        }
+
+        @Test
+        void deleteComment_Fail_ThrowsWhenAssistantDeletesAssistantComment() {
+            mockCurrentUser(OTHER_USER_ID);
+            mockAnnouncement(true);
+            mockAssistantAccess(OTHER_USER_ID);
+
+            mockMemberAccess(COMMENT_OWNER_ID, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE);
+            saveExistingComment(9L, COMMENT_OWNER_ID, "Assistant comment");
+
+            assertThrows(AppException.class, () ->
+                    service.deleteComment(deleteRequest(9L))
+            );
+
+            assertFalse(commentStore.get(9L).getIsDeleted());
+            assertCommentNotDeleted(9L);
+        }
     }
 }

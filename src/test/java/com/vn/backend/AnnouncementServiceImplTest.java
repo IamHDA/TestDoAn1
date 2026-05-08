@@ -1,362 +1,994 @@
 package com.vn.backend;
 
-import com.vn.backend.constants.AppConst;
-import com.vn.backend.dto.request.announcement.*;
-import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
+import com.vn.backend.dto.request.announcement.AnnouncementCreateRequest;
+import com.vn.backend.dto.request.announcement.AnnouncementFilterRequest;
+import com.vn.backend.dto.request.announcement.AnnouncementListRequest;
+import com.vn.backend.dto.request.announcement.AnnouncementUpdateRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.response.announcement.AnnouncementResponse;
-import com.vn.backend.entities.*;
+import com.vn.backend.dto.response.common.ResponseListData;
+import com.vn.backend.entities.Announcement;
+import com.vn.backend.entities.Attachment;
 import com.vn.backend.entities.ClassMember;
-import com.vn.backend.enums.*;
+import com.vn.backend.entities.Classroom;
+import com.vn.backend.entities.User;
+import com.vn.backend.enums.AnnouncementType;
+import com.vn.backend.enums.AttachmentType;
+import com.vn.backend.enums.ClassMemberRole;
+import com.vn.backend.enums.ClassMemberStatus;
+import com.vn.backend.enums.ClassroomStatus;
+import com.vn.backend.enums.NotificationObjectType;
+import com.vn.backend.enums.Role;
 import com.vn.backend.exceptions.AppException;
-import com.vn.backend.repositories.*;
+import com.vn.backend.repositories.AnnouncementRepository;
+import com.vn.backend.repositories.AttachmentRepository;
+import com.vn.backend.repositories.ClassMemberRepository;
+import com.vn.backend.repositories.ClassroomRepository;
+import com.vn.backend.repositories.ClassroomSettingRepository;
 import com.vn.backend.services.AuthService;
 import com.vn.backend.services.NotificationService;
 import com.vn.backend.services.impl.AnnouncementServiceImpl;
 import com.vn.backend.utils.MessageUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("AnnouncementServiceImpl Unit Tests")
 class AnnouncementServiceImplTest {
 
-    @Mock private AnnouncementRepository announcementRepository;
-    @Mock private AttachmentRepository attachmentRepository;
-    @Mock private ClassMemberRepository classMemberRepository;
-    @Mock private ClassroomRepository classroomRepository;
-    @Mock private AuthService authService;
-    @Mock private NotificationService notificationService;
-    @Mock private ClassroomSettingRepository classroomSettingRepository;
-    @Mock private MessageUtils messageUtils;
+    private static final Long CLASSROOM_ID = 10L;
+    private static final Long TEACHER_ID = 4L;
+    private static final Long STUDENT_ID = 8L;
+    private static final Long ASSISTANT_ID = 9L;
+    private static final Long ANNOUNCEMENT_ID = 11L;
 
-    @InjectMocks
-    private AnnouncementServiceImpl announcementService;
+    @Mock
+    private AnnouncementRepository announcementRepository;
 
-    private User teacherUser;
-    private User studentUser;
-    private Classroom classroom;
-    private ClassMember activeMember;
-    private Announcement announcement;
+    @Mock
+    private AttachmentRepository attachmentRepository;
+
+    @Mock
+    private ClassMemberRepository classMemberRepository;
+
+    @Mock
+    private ClassroomRepository classroomRepository;
+
+    @Mock
+    private AuthService authService;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private ClassroomSettingRepository classroomSettingRepository;
+
+    private AnnouncementServiceImpl service;
+
+    private final Map<Long, Announcement> announcementStore = new HashMap<>();
+    private final Map<Long, List<Attachment>> attachmentStore = new HashMap<>();
+
+    private final AtomicLong announcementIds = new AtomicLong(1);
+    private final AtomicLong attachmentIds = new AtomicLong(1);
 
     @BeforeEach
     void setUp() {
-        teacherUser = User.builder().id(1L).username("teacher").role(Role.TEACHER).build();
-        studentUser = User.builder().id(2L).username("student").role(Role.STUDENT).build();
-        
-        classroom = Classroom.builder().classroomId(100L).className("Lớp Test").build();
-        
-        activeMember = ClassMember.builder()
-                .memberId(10L).classroomId(100L).userId(2L)
-                .memberStatus(ClassMemberStatus.ACTIVE).memberRole(ClassMemberRole.STUDENT).build();
-                
-        announcement = Announcement.builder()
-                .announcementId(500L).classroomId(100L).title("Thông báo 1").content("Nội dung").type(AnnouncementType.GENERIC)
-                .createdBy(1L).createdByUser(teacherUser).isDeleted(false).build();
-                
-        when(messageUtils.getMessage(anyString())).thenReturn("Error message");
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
+
+        service = new AnnouncementServiceImpl(
+                messageUtils,
+                announcementRepository,
+                attachmentRepository,
+                classMemberRepository,
+                classroomRepository,
+                authService,
+                notificationService,
+                classroomSettingRepository
+        );
+
+        mockAnnouncementRepositoryStorage();
+        mockAttachmentRepositoryStorage();
     }
 
-    // ================== CREATE ANNOUNCEMENT ==================
-    @Test
-    @DisplayName("TC_QLLH_ANN_01: createAnnouncement - ném exp 400 khi classroom không tồn tại")
-    void createAnnouncement_ThrowsException_ClassNotFound() {
-        when(classroomRepository.findByClassroomIdAndClassroomStatus(999L, ClassroomStatus.ACTIVE)).thenReturn(Optional.empty());
-        
-        assertThatThrownBy(() -> announcementService.createAnnouncement(999L, new AnnouncementCreateRequest()))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    private void mockAnnouncementRepositoryStorage() {
+        when(announcementRepository.saveAndFlush(any(Announcement.class))).thenAnswer(invocation -> {
+            Announcement announcement = invocation.getArgument(0);
+
+            if (announcement.getAnnouncementId() == null) {
+                announcement.setAnnouncementId(announcementIds.getAndIncrement());
+            }
+
+            announcementStore.put(announcement.getAnnouncementId(), announcement);
+            return announcement;
+        });
+
+        when(announcementRepository.save(any(Announcement.class))).thenAnswer(invocation -> {
+            Announcement announcement = invocation.getArgument(0);
+            announcementStore.put(announcement.getAnnouncementId(), announcement);
+            return announcement;
+        });
+
+        when(announcementRepository.findByIdAndNotDeleted(anyLong())).thenAnswer(invocation -> {
+            Long announcementId = invocation.getArgument(0);
+            Announcement announcement = announcementStore.get(announcementId);
+
+            if (announcement == null || Boolean.TRUE.equals(announcement.getIsDeleted())) {
+                return Optional.empty();
+            }
+
+            return Optional.of(announcement);
+        });
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_02: createAnnouncement - ném FORBIDDEN khi user không có quyền vào class")
-    void createAnnouncement_ThrowsException_ForbiddenAccess() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE)).thenReturn(Optional.of(classroom));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        // User is not even an active member
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.empty());
+    private void mockAttachmentRepositoryStorage() {
+        when(attachmentRepository.save(any(Attachment.class))).thenAnswer(invocation -> {
+            Attachment attachment = invocation.getArgument(0);
 
-        assertThatThrownBy(() -> announcementService.createAnnouncement(100L, new AnnouncementCreateRequest()))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+            if (attachment.getAttachmentId() == null) {
+                attachment.setAttachmentId(attachmentIds.getAndIncrement());
+            }
+
+            attachmentStore.computeIfAbsent(attachment.getObjectId(), key -> new ArrayList<>()).add(attachment);
+            return attachment;
+        });
+
+        when(attachmentRepository.saveAll(any())).thenAnswer(invocation -> {
+            List<Attachment> attachments = invocation.getArgument(0);
+
+            for (Attachment attachment : attachments) {
+                if (attachment.getAttachmentId() == null) {
+                    attachment.setAttachmentId(attachmentIds.getAndIncrement());
+                }
+
+                attachmentStore.computeIfAbsent(attachment.getObjectId(), key -> new ArrayList<>()).add(attachment);
+            }
+
+            return attachments;
+        });
+
+        when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(
+                anyLong(),
+                any(AttachmentType.class)
+        )).thenAnswer(invocation -> {
+            Long objectId = invocation.getArgument(0);
+
+            return attachmentStore.getOrDefault(objectId, List.of())
+                    .stream()
+                    .filter(attachment -> !Boolean.TRUE.equals(attachment.getIsDeleted()))
+                    .toList();
+        });
+
+        doAnswer(invocation -> {
+            Long attachmentId = invocation.getArgument(0);
+
+            attachmentStore.values()
+                    .stream()
+                    .flatMap(List::stream)
+                    .filter(attachment -> attachmentId.equals(attachment.getAttachmentId()))
+                    .findFirst()
+                    .ifPresent(attachment -> attachment.setIsDeleted(true));
+
+            return null;
+        }).when(attachmentRepository).softDeleteById(anyLong());
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_03: createAnnouncement - học sinh không được đăng nếu lớp cấm post")
-    void createAnnouncement_ThrowsException_StudentCannotPost() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE)).thenReturn(Optional.of(classroom));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(activeMember));
-        
-        // Setting cấm post
-        when(classroomSettingRepository.existsByClassroomIdAndAllowStudentPostFalse(100L)).thenReturn(true);
-
-        assertThatThrownBy(() -> announcementService.createAnnouncement(100L, new AnnouncementCreateRequest()))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    private User user(Long userId, Role role) {
+        return User.builder()
+                .id(userId)
+                .username("user" + userId)
+                .fullName("User " + userId)
+                .avatarUrl("avatar-" + userId + ".png")
+                .role(role)
+                .build();
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_04: createAnnouncement - học sinh không được phép tạo MATERIAL (Tài liệu)")
-    void createAnnouncement_ThrowsException_StudentCreatesMaterial() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE)).thenReturn(Optional.of(classroom));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(activeMember));
-        when(classroomSettingRepository.existsByClassroomIdAndAllowStudentPostFalse(100L)).thenReturn(false);
-
-        AnnouncementCreateRequest request = new AnnouncementCreateRequest();
-        request.setType(AnnouncementType.MATERIAL);
-
-        assertThatThrownBy(() -> announcementService.createAnnouncement(100L, request))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+    private void mockCurrentUser(Long userId, Role role) {
+        when(authService.getCurrentUser()).thenReturn(user(userId, role));
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_05: createAnnouncement - tạo thành công thông báo kèm files đính kèm")
-    void createAnnouncement_Success() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(classroomRepository.findByClassroomIdAndClassroomStatus(100L, ClassroomStatus.ACTIVE)).thenReturn(Optional.of(classroom));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
-        when(classroomSettingRepository.existsByClassroomIdAndAllowStudentPostFalse(100L)).thenReturn(false);
-
-        AnnouncementCreateRequest request = new AnnouncementCreateRequest();
-        request.setTitle("Test title");
-        request.setType(AnnouncementType.GENERIC);
-        
-        AnnouncementCreateRequest.AttachmentRequest attReq = new AnnouncementCreateRequest.AttachmentRequest();
-        attReq.setFileName("file.pdf");
-        request.setAttachments(List.of(attReq));
-
-        when(announcementRepository.saveAndFlush(any(Announcement.class))).thenReturn(announcement);
-
-        announcementService.createAnnouncement(100L, request);
-
-        verify(announcementRepository).saveAndFlush(any(Announcement.class));
-        verify(attachmentRepository).saveAll(anyList());
-        verify(notificationService).createNotificationForClass(eq(teacherUser), eq(100L), eq(NotificationObjectType.ANNOUNCEMENT), eq(500L));
+    private Classroom classroom() {
+        return Classroom.builder()
+                .classroomId(CLASSROOM_ID)
+                .className("SE Class")
+                .classroomStatus(ClassroomStatus.ACTIVE)
+                .teacherId(TEACHER_ID)
+                .build();
     }
 
-    // ================== GET LIST ==================
-    @Test
-    @DisplayName("TC_QLLH_ANN_06: getAnnouncementList - ném FORBIDDEN khi user ngoài lớp")
-    void getAnnouncementList_ThrowsForbidden() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.empty());
-
-        BaseFilterSearchRequest<AnnouncementFilterRequest> req = new BaseFilterSearchRequest<>();
-        
-        assertThatThrownBy(() -> announcementService.getAnnouncementList(100L, new AnnouncementListRequest()))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+    private void mockClassroomExists() {
+        when(classroomRepository.findByClassroomIdAndClassroomStatus(
+                CLASSROOM_ID,
+                ClassroomStatus.ACTIVE
+        )).thenReturn(Optional.of(classroom()));
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_07: getAnnouncementList - lấy list thành công & check role")
-    void getAnnouncementList_Success() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
-        
-        AnnouncementListRequest req = new AnnouncementListRequest();
-        req.setFilters(new AnnouncementFilterRequest());
-        req.setPagination(new SearchRequest());
-        
-        Page<Announcement> page = new PageImpl<>(List.of(announcement));
-        when(announcementRepository.findByClassroomIdWithFilters(eq(100L), any(), any(Pageable.class))).thenReturn(page);
-        
-        var result = announcementService.getAnnouncementList(100L, req);
-        
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().iterator().next().getCanEdit()).isTrue(); // Teacher có quyền
-        assertThat(result.getPaging().getTotalRows()).isEqualTo(1);
+    private void mockClassroomMissing() {
+        when(classroomRepository.findByClassroomIdAndClassroomStatus(
+                CLASSROOM_ID,
+                ClassroomStatus.ACTIVE
+        )).thenReturn(Optional.empty());
     }
 
-    // ================== GET DETAIL ==================
-    @Test
-    @DisplayName("TC_QLLH_ANN_08: getAnnouncementDetail - ném 400 khi ID không tồn tại")
-    void getAnnouncementDetail_NotFound() {
-        when(announcementRepository.findByIdAndNotDeleted(999L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> announcementService.getAnnouncementDetail(999L))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    private ClassMember member(Long userId, ClassMemberRole role, ClassMemberStatus status) {
+        return ClassMember.builder()
+                .classroomId(CLASSROOM_ID)
+                .userId(userId)
+                .memberRole(role)
+                .memberStatus(status)
+                .build();
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_09: getAnnouncementDetail - parse detail thành công cùng attachments")
-    void getAnnouncementDetail_Success() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(activeMember));
-        
-        Attachment att = Attachment.builder().attachmentId(10L).isDeleted(false).fileName("Test.pdf").build();
-        when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(eq(500L), any())).thenReturn(List.of(att));
-
-        var result = announcementService.getAnnouncementDetail(500L);
-        
-        assertThat(result.getAnnouncementId()).isEqualTo(500L);
-        assertThat(result.getCanEdit()).isFalse(); // student không tự tạo bài này (do teacher tạo), nên canEdit = false
-        assertThat(result.getAttachments()).hasSize(1);
-        assertThat(result.getAttachments().iterator().next().getFileName()).isEqualTo("Test.pdf");
+    private void mockTeacherAccess(Long userId, boolean isTeacher) {
+        when(classroomRepository.existsByClassroomIdAndTeacherId(CLASSROOM_ID, userId))
+                .thenReturn(isTeacher);
     }
 
-    // ================== UPDATE ANNOUNCEMENT ==================
-    @Test
-    @DisplayName("TC_QLLH_ANN_10: updateAnnouncement - Không tồn tại")
-    void updateAnnouncement_NotFound() {
-        when(announcementRepository.findByIdAndNotDeleted(999L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> announcementService.updateAnnouncement(999L, new AnnouncementUpdateRequest()))
-                .isInstanceOf(AppException.class);
+    private void mockMemberAccess(Long userId, ClassMemberRole role, ClassMemberStatus status) {
+        when(classMemberRepository.findByClassroomIdAndUserId(CLASSROOM_ID, userId))
+                .thenReturn(Optional.of(member(userId, role, status)));
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_11: updateAnnouncement - Cấm Student sửa bài của người khác")
-    void updateAnnouncement_ForbiddenStudent() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement)); // Do teacherUser (ID=1) tạo
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(activeMember));
-
-        assertThatThrownBy(() -> announcementService.updateAnnouncement(500L, new AnnouncementUpdateRequest()))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+    private void mockNoMemberAccess(Long userId) {
+        when(classMemberRepository.findByClassroomIdAndUserId(CLASSROOM_ID, userId))
+                .thenReturn(Optional.empty());
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_12: updateAnnouncement - Student tự tạo có thể chỉnh sửa")
-    void updateAnnouncement_SuccessStudentCreator() {
-        when(authService.getCurrentUser()).thenReturn(studentUser); // ID = 2
-        Announcement studentAnn = Announcement.builder().announcementId(501L).classroomId(100L).createdBy(2L).build();
-        when(announcementRepository.findByIdAndNotDeleted(501L)).thenReturn(Optional.of(studentAnn)); 
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(activeMember));
-
-        AnnouncementUpdateRequest req = new AnnouncementUpdateRequest();
-        req.setContent("Content changed");
-        announcementService.updateAnnouncement(501L, req);
-
-        verify(announcementRepository).save(studentAnn);
-        assertThat(studentAnn.getContent()).isEqualTo("Content changed");
+    private void mockStudentAccess(Long userId) {
+        mockTeacherAccess(userId, false);
+        mockMemberAccess(userId, ClassMemberRole.STUDENT, ClassMemberStatus.ACTIVE);
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_13: updateAnnouncement - Teacher sửa bài thành công mà không cần kiểm tra quyền createdBy")
-    void updateAnnouncement_SuccessTeacher() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser); // ID = 1
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true); // Is Teacher!
-
-        AnnouncementUpdateRequest req = new AnnouncementUpdateRequest();
-        announcementService.updateAnnouncement(500L, req);
-
-        verify(announcementRepository).save(announcement);
+    private void mockAssistantAccess(Long userId) {
+        mockTeacherAccess(userId, false);
+        mockMemberAccess(userId, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE);
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_14: updateAnnouncement - Chỉnh sửa kèm xử lý file attachments (Xóa cũ, Thêm mới)")
-    void updateAnnouncement_AttachmentsLogic() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
-
-        Attachment oldAtt = Attachment.builder().attachmentId(10L).isDeleted(false).build();
-        when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(eq(500L), any())).thenReturn(List.of(oldAtt));
-
-        AnnouncementUpdateRequest req = new AnnouncementUpdateRequest();
-        AnnouncementUpdateRequest.AttachmentUpdateRequest attReq1 = new AnnouncementUpdateRequest.AttachmentUpdateRequest();
-        attReq1.setAttachmentId(10L); // Giữ lại cũ
-        AnnouncementUpdateRequest.AttachmentUpdateRequest attReq2 = new AnnouncementUpdateRequest.AttachmentUpdateRequest();
-        attReq2.setAttachmentId(null); // Thêm file mới
-        
-        req.setAttachments(List.of(attReq1, attReq2));
-
-        announcementService.updateAnnouncement(500L, req);
-
-        // Đảm bảo file mới sẽ đc lưu
-        verify(attachmentRepository).save(any(Attachment.class));
-        // Id = 10L giữ nguyên do có truyền trong Request, không xóa
-        verify(attachmentRepository, never()).softDeleteById(10L);
-    }
-    
-    @Test
-    @DisplayName("TC_QLLH_ANN_14b: updateAnnouncement - Nếu request rỗng thì xóa toàn bộ Attachment hiện tại")
-    void updateAnnouncement_EmptyAttachments() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
-
-        Attachment oldAtt = Attachment.builder().attachmentId(10L).isDeleted(false).build();
-        when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(eq(500L), any())).thenReturn(List.of(oldAtt));
-
-        AnnouncementUpdateRequest req = new AnnouncementUpdateRequest();
-        req.setAttachments(new ArrayList<>()); // danh sách rỗng 
-
-        announcementService.updateAnnouncement(500L, req);
-
-        // Đảm bảo file cũ bị xóa
-        verify(attachmentRepository).softDeleteById(10L);
+    private void mockPostAllowed() {
+        when(classroomSettingRepository.existsByClassroomIdAndAllowStudentPostFalse(CLASSROOM_ID))
+                .thenReturn(false);
     }
 
-    // ================== DELETE ANNOUNCEMENT ==================
-    @Test
-    @DisplayName("TC_QLLH_ANN_15: deleteAnnouncement - Ném exp khi bài viết ko tồn tại")
-    void deleteAnnouncement_NotFound() {
-        when(announcementRepository.findByIdAndNotDeleted(999L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> announcementService.deleteAnnouncement(999L)).isInstanceOf(AppException.class);
+    private void mockPostDisabled() {
+        when(classroomSettingRepository.existsByClassroomIdAndAllowStudentPostFalse(CLASSROOM_ID))
+                .thenReturn(true);
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_16: deleteAnnouncement - Ném exp FORBIDDEN khi k đủ quyền")
-    void deleteAnnouncement_Forbidden() {
-        when(authService.getCurrentUser()).thenReturn(studentUser);
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 2L)).thenReturn(false);
-        when(classMemberRepository.findByClassroomIdAndUserId(100L, 2L)).thenReturn(Optional.of(activeMember));
-
-        assertThatThrownBy(() -> announcementService.deleteAnnouncement(500L))
-                .isInstanceOf(AppException.class)
-                .satisfies(ex -> assertThat(((AppException) ex).getHttpStatus()).isEqualTo(HttpStatus.FORBIDDEN));
+    private Announcement announcement(
+            Long announcementId,
+            Long createdBy,
+            AnnouncementType type
+    ) {
+        return Announcement.builder()
+                .announcementId(announcementId)
+                .classroomId(CLASSROOM_ID)
+                .createdBy(createdBy)
+                .createdByUser(user(createdBy, createdBy.equals(TEACHER_ID) ? Role.TEACHER : Role.STUDENT))
+                .title("Old title")
+                .content("Old content")
+                .type(type)
+                .allowComments(true)
+                .objectId(null)
+                .isDeleted(false)
+                .build();
     }
 
-    @Test
-    @DisplayName("TC_QLLH_ANN_17: deleteAnnouncement - Xóa mềm (Soft delete) thành công")
-    void deleteAnnouncement_Success() {
-        when(authService.getCurrentUser()).thenReturn(teacherUser);
-        when(announcementRepository.findByIdAndNotDeleted(500L)).thenReturn(Optional.of(announcement));
-        when(classroomRepository.existsByClassroomIdAndTeacherId(100L, 1L)).thenReturn(true);
+    private Announcement saveAnnouncement(Long announcementId, Long createdBy, AnnouncementType type) {
+        Announcement announcement = announcement(announcementId, createdBy, type);
+        announcementStore.put(announcementId, announcement);
+        return announcement;
+    }
 
-        announcementService.deleteAnnouncement(500L);
+    private Attachment attachment(
+            Long attachmentId,
+            Long objectId,
+            String fileName,
+            boolean deleted
+    ) {
+        return Attachment.builder()
+                .attachmentId(attachmentId)
+                .objectId(objectId)
+                .attachmentType(AttachmentType.GENERIC)
+                .fileName(fileName)
+                .fileUrl("https://cdn/" + fileName)
+                .description("Description " + fileName)
+                .uploadedBy(TEACHER_ID)
+                .isDeleted(deleted)
+                .build();
+    }
 
-        verify(announcementRepository).save(announcement);
-        assertThat(announcement.getIsDeleted()).isTrue();
+    private void saveAttachment(Long announcementId, Attachment attachment) {
+        attachmentStore.computeIfAbsent(announcementId, key -> new ArrayList<>()).add(attachment);
+    }
+
+    private AnnouncementCreateRequest createRequest(
+            AnnouncementType type,
+            String title,
+            String content,
+            boolean allowComments
+    ) {
+        return AnnouncementCreateRequest.builder()
+                .title(title)
+                .content(content)
+                .type(type)
+                .allowComments(allowComments)
+                .build();
+    }
+
+    private AnnouncementCreateRequest createRequestWithAttachment() {
+        return AnnouncementCreateRequest.builder()
+                .title("Week 1")
+                .content("Welcome")
+                .type(AnnouncementType.GENERIC)
+                .allowComments(true)
+                .attachments(List.of(
+                        AnnouncementCreateRequest.AttachmentRequest.builder()
+                                .fileName("slide.pdf")
+                                .fileUrl("https://cdn/slide.pdf")
+                                .description("Deck")
+                                .build()
+                ))
+                .build();
+    }
+
+    private AnnouncementUpdateRequest updateRequest(
+            String title,
+            String content,
+            Boolean allowComments
+    ) {
+        return AnnouncementUpdateRequest.builder()
+                .title(title)
+                .content(content)
+                .allowComments(allowComments)
+                .build();
+    }
+
+    private AnnouncementUpdateRequest updateRequestWithAttachments(
+            List<AnnouncementUpdateRequest.AttachmentUpdateRequest> attachments
+    ) {
+        return AnnouncementUpdateRequest.builder()
+                .title("Updated title")
+                .content("Updated content")
+                .allowComments(false)
+                .attachments(attachments)
+                .build();
+    }
+
+    private AnnouncementUpdateRequest.AttachmentUpdateRequest existingAttachment(Long attachmentId) {
+        return AnnouncementUpdateRequest.AttachmentUpdateRequest.builder()
+                .attachmentId(attachmentId)
+                .build();
+    }
+
+    private AnnouncementUpdateRequest.AttachmentUpdateRequest newAttachment(String fileName) {
+        return AnnouncementUpdateRequest.AttachmentUpdateRequest.builder()
+                .fileName(fileName)
+                .fileUrl("https://cdn/" + fileName)
+                .description("New " + fileName)
+                .build();
+    }
+
+    private AnnouncementListRequest listRequest() {
+        SearchRequest pagination = new SearchRequest();
+        pagination.setPageNum("1");
+        pagination.setPageSize("10");
+
+        AnnouncementListRequest request = new AnnouncementListRequest();
+        request.setPagination(pagination);
+        return request;
+    }
+
+    private AnnouncementListRequest listRequestWithFilter(AnnouncementType type) {
+        SearchRequest pagination = new SearchRequest();
+        pagination.setPageNum("1");
+        pagination.setPageSize("10");
+
+        AnnouncementFilterRequest filter = new AnnouncementFilterRequest();
+        filter.setType(type);
+
+        AnnouncementListRequest request = new AnnouncementListRequest();
+        request.setPagination(pagination);
+        request.setFilters(filter);
+        return request;
+    }
+
+    private void assertAnnouncementNotSaved(Announcement announcement) {
+        verify(announcementRepository, never()).save(eq(announcement));
+    }
+
+    private void assertNotificationNotSent() {
+        verify(notificationService, never())
+                .createNotificationForClass(any(), anyLong(), any(), anyLong());
+    }
+
+    @Nested
+    class CreateAnnouncementTests {
+
+        @Test
+        void createAnnouncement_Success_PersistsAnnouncementAndAttachments() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockClassroomExists();
+            mockTeacherAccess(TEACHER_ID, true);
+            mockPostAllowed();
+
+            service.createAnnouncement(CLASSROOM_ID, createRequestWithAttachment());
+
+            Announcement saved = announcementStore.values().stream().findFirst().orElseThrow();
+
+            assertEquals("Week 1", saved.getTitle());
+            assertEquals("Welcome", saved.getContent());
+            assertEquals(AnnouncementType.GENERIC, saved.getType());
+            assertEquals(TEACHER_ID, saved.getCreatedBy());
+            assertFalse(saved.getIsDeleted());
+
+            assertEquals(1, attachmentStore.get(saved.getAnnouncementId()).size());
+            assertEquals("slide.pdf", attachmentStore.get(saved.getAnnouncementId()).get(0).getFileName());
+
+            verify(notificationService).createNotificationForClass(
+                    any(User.class),
+                    eq(CLASSROOM_ID),
+                    eq(NotificationObjectType.ANNOUNCEMENT),
+                    eq(saved.getAnnouncementId())
+            );
+        }
+
+        @Test
+        void createAnnouncement_Success_StudentCreatesGenericWhenPostAllowed() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockClassroomExists();
+            mockStudentAccess(STUDENT_ID);
+            mockPostAllowed();
+
+            service.createAnnouncement(
+                    CLASSROOM_ID,
+                    createRequest(AnnouncementType.GENERIC, "Question", "Can I ask?", true)
+            );
+
+            Announcement saved = announcementStore.values().stream().findFirst().orElseThrow();
+
+            assertEquals("Question", saved.getTitle());
+            assertEquals(STUDENT_ID, saved.getCreatedBy());
+        }
+
+        @Test
+        void createAnnouncement_Fail_ThrowsWhenClassroomMissing() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockClassroomMissing();
+
+            assertThrows(AppException.class, () ->
+                    service.createAnnouncement(
+                            CLASSROOM_ID,
+                            createRequest(AnnouncementType.GENERIC, "Title", "Content", true)
+                    )
+            );
+
+            verify(announcementRepository, never()).saveAndFlush(any(Announcement.class));
+            assertNotificationNotSent();
+        }
+
+        @Test
+        void createAnnouncement_Fail_ThrowsWhenUserHasNoClassroomAccess() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockClassroomExists();
+            mockTeacherAccess(STUDENT_ID, false);
+            mockNoMemberAccess(STUDENT_ID);
+            mockPostAllowed();
+
+            assertThrows(AppException.class, () ->
+                    service.createAnnouncement(
+                            CLASSROOM_ID,
+                            createRequest(AnnouncementType.GENERIC, "Title", "Content", true)
+                    )
+            );
+
+            verify(announcementRepository, never()).saveAndFlush(any(Announcement.class));
+            assertNotificationNotSent();
+        }
+
+        @Test
+        void createAnnouncement_Fail_ThrowsWhenMemberInactive() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockClassroomExists();
+            mockTeacherAccess(STUDENT_ID, false);
+            mockMemberAccess(STUDENT_ID, ClassMemberRole.STUDENT, ClassMemberStatus.INACTIVE);
+            mockPostAllowed();
+
+            assertThrows(AppException.class, () ->
+                    service.createAnnouncement(
+                            CLASSROOM_ID,
+                            createRequest(AnnouncementType.GENERIC, "Title", "Content", true)
+                    )
+            );
+
+            verify(announcementRepository, never()).saveAndFlush(any(Announcement.class));
+            assertNotificationNotSent();
+        }
+
+        @Test
+        void createAnnouncement_Fail_ThrowsWhenStudentPostDisabled() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockClassroomExists();
+            mockStudentAccess(STUDENT_ID);
+            mockPostDisabled();
+
+            assertThrows(AppException.class, () ->
+                    service.createAnnouncement(
+                            CLASSROOM_ID,
+                            createRequest(AnnouncementType.GENERIC, "Title", "Content", true)
+                    )
+            );
+
+            verify(announcementRepository, never()).saveAndFlush(any(Announcement.class));
+            assertNotificationNotSent();
+        }
+
+        @Test
+        void createAnnouncement_Fail_ThrowsWhenStudentPostsMaterial() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockClassroomExists();
+            mockStudentAccess(STUDENT_ID);
+            mockPostAllowed();
+
+            assertThrows(AppException.class, () ->
+                    service.createAnnouncement(
+                            CLASSROOM_ID,
+                            createRequest(AnnouncementType.MATERIAL, "Material", "Private material", true)
+                    )
+            );
+
+            verify(announcementRepository, never()).saveAndFlush(any(Announcement.class));
+            assertNotificationNotSent();
+        }
+    }
+
+    @Nested
+    class GetAnnouncementListTests {
+
+        @Test
+        void getAnnouncementList_Success_ReturnsAnnouncementsForTeacher() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            Announcement first = announcement(1L, TEACHER_ID, AnnouncementType.GENERIC);
+            Announcement second = announcement(2L, STUDENT_ID, AnnouncementType.GENERIC);
+
+            when(announcementRepository.findByClassroomIdWithFilters(
+                    eq(CLASSROOM_ID),
+                    eq(null),
+                    any(Pageable.class)
+            )).thenReturn(new PageImpl<>(List.of(first, second)));
+
+            ResponseListData<AnnouncementResponse> result =
+                    service.getAnnouncementList(CLASSROOM_ID, listRequest());
+
+            assertNotNull(result);
+            assertNotNull(result.getContent());
+            List<AnnouncementResponse> items = new ArrayList<>(result.getContent());
+            assertEquals(2, items.size());
+            assertTrue(items.get(0).getCanEdit());
+            assertTrue(items.get(0).getCanDelete());
+
+            verify(announcementRepository).findByClassroomIdWithFilters(
+                    eq(CLASSROOM_ID),
+                    eq(null),
+                    any(Pageable.class)
+            );
+        }
+
+        @Test
+        void getAnnouncementList_Success_UsesFilterType() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            Announcement announcement = announcement(1L, TEACHER_ID, AnnouncementType.MATERIAL);
+
+            when(announcementRepository.findByClassroomIdWithFilters(
+                    eq(CLASSROOM_ID),
+                    eq(AnnouncementType.MATERIAL),
+                    any(Pageable.class)
+            )).thenReturn(new PageImpl<>(List.of(announcement)));
+
+            ResponseListData<AnnouncementResponse> result =
+                    service.getAnnouncementList(CLASSROOM_ID, listRequestWithFilter(AnnouncementType.MATERIAL));
+
+            assertEquals(1, result.getContent().size());
+
+            verify(announcementRepository).findByClassroomIdWithFilters(
+                    eq(CLASSROOM_ID),
+                    eq(AnnouncementType.MATERIAL),
+                    any(Pageable.class)
+            );
+        }
+
+        @Test
+        void getAnnouncementList_Fail_ThrowsWhenUserHasNoClassroomAccess() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockTeacherAccess(STUDENT_ID, false);
+            mockNoMemberAccess(STUDENT_ID);
+
+            assertThrows(AppException.class, () ->
+                    service.getAnnouncementList(CLASSROOM_ID, listRequest())
+            );
+
+            verify(announcementRepository, never()).findByClassroomIdWithFilters(
+                    anyLong(),
+                    any(),
+                    any(Pageable.class)
+            );
+        }
+    }
+
+    @Nested
+    class GetAnnouncementDetailTests {
+
+        @Test
+        void getAnnouncementDetail_Success_ReturnsPermissionsForOwnerStudent() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, STUDENT_ID, AnnouncementType.GENERIC);
+            saveAttachment(ANNOUNCEMENT_ID, attachment(1L, ANNOUNCEMENT_ID, "guide.pdf", false));
+
+            AnnouncementResponse response = service.getAnnouncementDetail(ANNOUNCEMENT_ID);
+
+            assertNotNull(response);
+            assertEquals(ANNOUNCEMENT_ID, response.getAnnouncementId());
+            assertTrue(response.getCanEdit());
+            assertTrue(response.getCanDelete());
+            assertEquals(1, response.getAttachments().size());
+            assertEquals("guide.pdf", response.getAttachments().get(0).getFileName());
+        }
+
+        @Test
+        void getAnnouncementDetail_Success_TeacherCanEditAndDelete() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            saveAnnouncement(ANNOUNCEMENT_ID, STUDENT_ID, AnnouncementType.GENERIC);
+
+            AnnouncementResponse response = service.getAnnouncementDetail(ANNOUNCEMENT_ID);
+
+            assertTrue(response.getCanEdit());
+            assertTrue(response.getCanDelete());
+        }
+
+        @Test
+        void getAnnouncementDetail_Success_NonOwnerStudentCannotEditOrDelete() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            AnnouncementResponse response = service.getAnnouncementDetail(ANNOUNCEMENT_ID);
+
+            assertFalse(response.getCanEdit());
+            assertFalse(response.getCanDelete());
+        }
+
+        @Test
+        void getAnnouncementDetail_Fail_ThrowsWhenAnnouncementMissing() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+
+            assertThrows(AppException.class, () ->
+                    service.getAnnouncementDetail(99L)
+            );
+        }
+
+        @Test
+        void getAnnouncementDetail_Fail_ThrowsWhenUserHasNoClassroomAccess() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockTeacherAccess(STUDENT_ID, false);
+            mockNoMemberAccess(STUDENT_ID);
+
+            saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            assertThrows(AppException.class, () ->
+                    service.getAnnouncementDetail(ANNOUNCEMENT_ID)
+            );
+        }
+    }
+
+    @Nested
+    class UpdateAnnouncementTests {
+
+        @Test
+        void updateAnnouncement_Success_OwnerUpdatesAnnouncement() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, STUDENT_ID, AnnouncementType.GENERIC);
+
+            service.updateAnnouncement(
+                    ANNOUNCEMENT_ID,
+                    updateRequest("Updated title", "Updated content", false)
+            );
+
+            assertEquals("Updated title", announcement.getTitle());
+            assertEquals("Updated content", announcement.getContent());
+            assertFalse(announcement.getAllowComments());
+
+            verify(announcementRepository).save(eq(announcement));
+        }
+
+        @Test
+        void updateAnnouncement_Success_TeacherUpdatesAnnouncement() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, STUDENT_ID, AnnouncementType.GENERIC);
+
+            service.updateAnnouncement(
+                    ANNOUNCEMENT_ID,
+                    updateRequest("Teacher title", "Teacher content", true)
+            );
+
+            assertEquals("Teacher title", announcement.getTitle());
+            assertEquals("Teacher content", announcement.getContent());
+            assertTrue(announcement.getAllowComments());
+
+            verify(announcementRepository).save(eq(announcement));
+        }
+
+        @Test
+        void updateAnnouncement_Success_AddsNewAttachmentAndKeepsExistingAttachment() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+            Attachment oldAttachment = attachment(1L, ANNOUNCEMENT_ID, "old.pdf", false);
+            saveAttachment(ANNOUNCEMENT_ID, oldAttachment);
+
+            service.updateAnnouncement(
+                    ANNOUNCEMENT_ID,
+                    updateRequestWithAttachments(List.of(
+                            existingAttachment(1L),
+                            newAttachment("new.pdf")
+                    ))
+            );
+
+            List<Attachment> attachments = attachmentStore.get(ANNOUNCEMENT_ID);
+
+            assertEquals("Updated title", announcement.getTitle());
+            assertEquals(2, attachments.size());
+            assertFalse(oldAttachment.getIsDeleted());
+            assertTrue(attachments.stream().anyMatch(att -> "new.pdf".equals(att.getFileName())));
+        }
+
+        @Test
+        void updateAnnouncement_Success_DeletesRemovedAttachment() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            Attachment keep = attachment(1L, ANNOUNCEMENT_ID, "keep.pdf", false);
+            Attachment remove = attachment(2L, ANNOUNCEMENT_ID, "remove.pdf", false);
+            saveAttachment(ANNOUNCEMENT_ID, keep);
+            saveAttachment(ANNOUNCEMENT_ID, remove);
+
+            service.updateAnnouncement(
+                    ANNOUNCEMENT_ID,
+                    updateRequestWithAttachments(List.of(existingAttachment(1L)))
+            );
+
+            assertFalse(keep.getIsDeleted());
+            assertTrue(remove.getIsDeleted());
+            verify(attachmentRepository).softDeleteById(2L);
+        }
+
+        @Test
+        void updateAnnouncement_Success_DeletesAllAttachmentsWhenRequestAttachmentsEmpty() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            Attachment first = attachment(1L, ANNOUNCEMENT_ID, "first.pdf", false);
+            Attachment second = attachment(2L, ANNOUNCEMENT_ID, "second.pdf", false);
+            saveAttachment(ANNOUNCEMENT_ID, first);
+            saveAttachment(ANNOUNCEMENT_ID, second);
+
+            service.updateAnnouncement(
+                    ANNOUNCEMENT_ID,
+                    updateRequestWithAttachments(List.of())
+            );
+
+            assertTrue(first.getIsDeleted());
+            assertTrue(second.getIsDeleted());
+            verify(attachmentRepository).softDeleteById(1L);
+            verify(attachmentRepository).softDeleteById(2L);
+        }
+
+        @Test
+        void updateAnnouncement_Fail_ThrowsWhenAnnouncementMissing() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+
+            assertThrows(AppException.class, () ->
+                    service.updateAnnouncement(
+                            99L,
+                            updateRequest("Updated", "Updated", true)
+                    )
+            );
+
+            verify(announcementRepository, never()).save(any(Announcement.class));
+        }
+
+        @Test
+        void updateAnnouncement_Fail_ThrowsWhenAssistantEditsOthersAnnouncement() {
+            mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
+            mockAssistantAccess(ASSISTANT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            assertThrows(AppException.class, () ->
+                    service.updateAnnouncement(
+                            ANNOUNCEMENT_ID,
+                            updateRequest("Updated", "Updated content", true)
+                    )
+            );
+
+            assertAnnouncementNotSaved(announcement);
+        }
+
+        @Test
+        void updateAnnouncement_Fail_ThrowsWhenStudentEditsOthersAnnouncement() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            assertThrows(AppException.class, () ->
+                    service.updateAnnouncement(
+                            ANNOUNCEMENT_ID,
+                            updateRequest("Updated", "Updated content", true)
+                    )
+            );
+
+            assertAnnouncementNotSaved(announcement);
+        }
+    }
+
+    @Nested
+    class DeleteAnnouncementTests {
+
+        @Test
+        void deleteAnnouncement_Success_OwnerDeletesAnnouncement() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, STUDENT_ID, AnnouncementType.GENERIC);
+
+            service.deleteAnnouncement(ANNOUNCEMENT_ID);
+
+            assertTrue(announcement.getIsDeleted());
+            verify(announcementRepository).save(eq(announcement));
+        }
+
+        @Test
+        void deleteAnnouncement_Success_TeacherDeletesAnnouncement() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+            mockTeacherAccess(TEACHER_ID, true);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, STUDENT_ID, AnnouncementType.GENERIC);
+
+            service.deleteAnnouncement(ANNOUNCEMENT_ID);
+
+            assertTrue(announcement.getIsDeleted());
+            verify(announcementRepository).save(eq(announcement));
+        }
+
+        @Test
+        void deleteAnnouncement_Fail_ThrowsWhenAnnouncementMissing() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+
+            assertThrows(AppException.class, () ->
+                    service.deleteAnnouncement(99L)
+            );
+
+            verify(announcementRepository, never()).save(any(Announcement.class));
+        }
+
+        @Test
+        void deleteAnnouncement_Fail_ThrowsWhenStudentDeletesOthersAnnouncement() {
+            mockCurrentUser(STUDENT_ID, Role.STUDENT);
+            mockStudentAccess(STUDENT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            assertThrows(AppException.class, () ->
+                    service.deleteAnnouncement(ANNOUNCEMENT_ID)
+            );
+
+            assertFalse(announcement.getIsDeleted());
+            assertAnnouncementNotSaved(announcement);
+        }
+
+        @Test
+        void deleteAnnouncement_Fail_ThrowsWhenAssistantDeletesOthersAnnouncement() {
+            mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
+            mockAssistantAccess(ASSISTANT_ID);
+
+            Announcement announcement = saveAnnouncement(ANNOUNCEMENT_ID, TEACHER_ID, AnnouncementType.GENERIC);
+
+            assertThrows(AppException.class, () ->
+                    service.deleteAnnouncement(ANNOUNCEMENT_ID)
+            );
+
+            assertFalse(announcement.getIsDeleted());
+            assertAnnouncementNotSaved(announcement);
+        }
+    }
+
+    @Nested
+    class NotifyAnnouncementTests {
+
+        @Test
+        void notifyAnnouncement_UsesObjectIdWhenObjectIdExists() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+
+            Announcement announcement = Announcement.builder()
+                    .announcementId(ANNOUNCEMENT_ID)
+                    .classroomId(CLASSROOM_ID)
+                    .objectId(100L)
+                    .type(AnnouncementType.ASSIGNMENT)
+                    .build();
+
+            service.notifyAnnouncement(announcement);
+
+            verify(notificationService).createNotificationForClass(
+                    any(User.class),
+                    eq(CLASSROOM_ID),
+                    eq(NotificationObjectType.ASSIGNMENT),
+                    eq(100L)
+            );
+        }
+
+        @Test
+        void notifyAnnouncement_UsesAnnouncementIdWhenObjectIdIsNull() {
+            mockCurrentUser(TEACHER_ID, Role.TEACHER);
+
+            Announcement announcement = Announcement.builder()
+                    .announcementId(ANNOUNCEMENT_ID)
+                    .classroomId(CLASSROOM_ID)
+                    .objectId(null)
+                    .type(AnnouncementType.EXAM)
+                    .build();
+
+            service.notifyAnnouncement(announcement);
+
+            verify(notificationService).createNotificationForClass(
+                    any(User.class),
+                    eq(CLASSROOM_ID),
+                    eq(NotificationObjectType.EXAM_CREATED),
+                    eq(ANNOUNCEMENT_ID)
+            );
+        }
     }
 }
