@@ -44,6 +44,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -63,6 +64,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -108,7 +110,7 @@ class ApprovalRequestServiceImplTest {
 
     private ApprovalRequest savedApprovalRequest;
     private List<Topic> savedTopics = new ArrayList<>();
-    private List<Topic> savedTopicsSecondCall = new ArrayList<>();
+    private List<Question> savedQuestions = new ArrayList<>();
     private Question savedQuestion;
     private Answer savedAnswer;
     private Classroom savedClassroom;
@@ -178,7 +180,8 @@ class ApprovalRequestServiceImplTest {
         when(approvalRequestItemsRepository.findByRequestIdAndIsDeletedFalse(anyLong()))
                 .thenAnswer(invocation -> {
                     Long requestId = invocation.getArgument(0);
-                    return itemStore.getOrDefault(requestId, List.of())
+
+                    List<ApprovalRequestItems> items = itemStore.getOrDefault(requestId, List.of())
                             .stream()
                             .filter(item -> !Boolean.TRUE.equals(item.getIsDeleted()))
                             .sorted(Comparator.comparing(
@@ -186,6 +189,8 @@ class ApprovalRequestServiceImplTest {
                                     Comparator.nullsLast(Comparator.naturalOrder())
                             ))
                             .toList();
+
+                    return new ArrayList<>(items);
                 });
     }
 
@@ -205,21 +210,27 @@ class ApprovalRequestServiceImplTest {
         when(topicRepository.findBySubjectIdAndIsActiveTrueAndIsDeletedFalse(anyLong()))
                 .thenAnswer(invocation -> {
                     Long subjectId = invocation.getArgument(0);
-                    return topicStore.values()
-                            .stream()
-                            .filter(topic -> subjectId.equals(topic.getSubjectId()))
-                            .filter(topic -> Boolean.TRUE.equals(topic.getIsActive()))
-                            .filter(topic -> !Boolean.TRUE.equals(topic.getIsDeleted()))
-                            .toList();
+
+                    return new ArrayList<>(
+                            topicStore.values()
+                                    .stream()
+                                    .filter(topic -> subjectId.equals(topic.getSubjectId()))
+                                    .filter(topic -> Boolean.TRUE.equals(topic.getIsActive()))
+                                    .filter(topic -> !Boolean.TRUE.equals(topic.getIsDeleted()))
+                                    .toList()
+                    );
                 });
 
         when(topicRepository.findByTopicIdInAndIsDeletedFalse(any()))
                 .thenAnswer(invocation -> {
                     List<Long> topicIds = invocation.getArgument(0);
-                    return topicIds.stream()
-                            .map(topicStore::get)
-                            .filter(topic -> topic != null && !Boolean.TRUE.equals(topic.getIsDeleted()))
-                            .toList();
+
+                    return new ArrayList<>(
+                            topicIds.stream()
+                                    .map(topicStore::get)
+                                    .filter(topic -> topic != null && !Boolean.TRUE.equals(topic.getIsDeleted()))
+                                    .toList()
+                    );
                 });
 
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(anyLong()))
@@ -227,7 +238,9 @@ class ApprovalRequestServiceImplTest {
                     Long topicId = invocation.getArgument(0);
                     Topic topic = topicStore.get(topicId);
 
-                    if (topic == null || Boolean.TRUE.equals(topic.getIsDeleted()) || !Boolean.TRUE.equals(topic.getIsActive())) {
+                    if (topic == null
+                            || Boolean.TRUE.equals(topic.getIsDeleted())
+                            || !Boolean.TRUE.equals(topic.getIsActive())) {
                         return Optional.empty();
                     }
 
@@ -238,9 +251,7 @@ class ApprovalRequestServiceImplTest {
             List<Topic> topics = invocation.getArgument(0);
 
             if (savedTopics.isEmpty()) {
-                savedTopics = topics;
-            } else {
-                savedTopicsSecondCall = topics;
+                savedTopics = new ArrayList<>(topics);
             }
 
             topics.forEach(topic -> topicStore.put(topic.getTopicId(), topic));
@@ -264,7 +275,9 @@ class ApprovalRequestServiceImplTest {
             }
 
             savedQuestion = question;
+            savedQuestions.add(question);
             questionStore.put(question.getQuestionId(), question);
+
             return question;
         });
     }
@@ -328,7 +341,9 @@ class ApprovalRequestServiceImplTest {
             ApprovalStatus status,
             Long requesterId
     ) {
-        return ApprovalRequest.builder()
+        User requester = user(requesterId, Role.TEACHER);
+
+        ApprovalRequest request = ApprovalRequest.builder()
                 .id(id)
                 .requestType(requestType)
                 .description("Need approval")
@@ -337,14 +352,22 @@ class ApprovalRequestServiceImplTest {
                 .isDeleted(false)
                 .items(new ArrayList<>())
                 .build();
+
+        request.setRequester(requester);
+
+        return request;
     }
 
     private ApprovalRequestItems item(Long requestId, Long entityId) {
-        return ApprovalRequestItems.builder()
+        ApprovalRequestItems item = ApprovalRequestItems.builder()
                 .requestId(requestId)
                 .entityId(entityId)
                 .isDeleted(false)
                 .build();
+
+        item.setCreatedAt(LocalDateTime.now().plusSeconds(entityId));
+
+        return item;
     }
 
     private ApprovalRequest saveApprovalRequest(
@@ -660,7 +683,7 @@ class ApprovalRequestServiceImplTest {
             assertEquals(2L, secondNewTopic.getPrerequisiteTopicId());
             assertFalse(oldTopic.getIsActive());
 
-            verify(topicRepository).saveAll(any());
+            verify(topicRepository, times(2)).saveAll(any());
         }
 
         @Test
@@ -688,13 +711,28 @@ class ApprovalRequestServiceImplTest {
             service.approveRequest(REQUEST_ID);
 
             assertEquals(ApprovalStatus.APPROVED, request.getStatus());
-            assertNotNull(savedQuestion);
-            assertTrue(savedQuestion.getIsReviewQuestion());
-            assertFalse(savedQuestion.getIsAddedToReview());
-            assertTrue(originalQuestion.getIsAddedToReview());
+
+            assertEquals(2, savedQuestions.size());
+
+            Question reviewQuestion = savedQuestions.stream()
+                    .filter(question -> Boolean.TRUE.equals(question.getIsReviewQuestion()))
+                    .findFirst()
+                    .orElseThrow();
+
+            Question updatedOriginalQuestion = savedQuestions.stream()
+                    .filter(question -> QUESTION_ID.equals(question.getQuestionId()))
+                    .findFirst()
+                    .orElseThrow();
+
+            assertTrue(reviewQuestion.getIsReviewQuestion());
+            assertFalse(reviewQuestion.getIsAddedToReview());
+
+            assertEquals(originalQuestion, updatedOriginalQuestion);
+            assertTrue(updatedOriginalQuestion.getIsAddedToReview());
+
             assertNotNull(savedAnswer);
 
-            verify(answerRepository).save(any(Answer.class));
+            verify(answerRepository, times(2)).save(any(Answer.class));
             verify(questionRepository).save(eq(originalQuestion));
         }
 
