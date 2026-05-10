@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.response.classroom.ClassroomAverageScoreComparisonResponse;
 import com.vn.backend.dto.response.classroom.ClassroomImprovementTrendResponse;
 import com.vn.backend.entities.Classroom;
@@ -59,6 +62,7 @@ class ClassroomStatisticsServiceImplTest {
         @Nested
         class GetAverageScoreComparisonTests {
                 @Test
+                @DisplayName("LH_TK_01 - Đảm bảo thống kê điểm trung bình theo ca thi hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
                 void getAverageScoreComparison_computesAveragePerSession() {
                         // Given: Có một bài thi (session) với ID 10, thuộc lớp học ID 3
                         SessionExam sessionExam = SessionExam.builder().sessionExamId(10L).title("Quiz 1").build();
@@ -81,6 +85,8 @@ class ClassroomStatisticsServiceImplTest {
                 }
 
                 @Test
+
+                @DisplayName("LH_TK_02 - Đảm bảo thống kê điểm trung bình theo ca thi xử lý đúng trường hợp lỗi: throws when classroom missing.")
                 void getAverageScoreComparison_throwsWhenClassroomMissing() {
                         when(classroomRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -94,6 +100,7 @@ class ClassroomStatisticsServiceImplTest {
         @Nested
         class GetImprovementTrendTests {
                 @Test
+                @DisplayName("LH_TK_03 - Đảm bảo thống kê xu hướng cải thiện hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
                 void getImprovementTrend_buildsSessionTrendStatistics() {
                         // Given: Lớp học ID 3 đang hoạt động
                         Classroom classroom = Classroom.builder()
@@ -144,6 +151,8 @@ class ClassroomStatisticsServiceImplTest {
                 }
 
                 @Test
+
+                @DisplayName("LH_TK_04 - Đảm bảo thống kê xu hướng cải thiện xử lý đúng trường hợp lỗi: throws when active classroom missing.")
                 void getImprovementTrend_throwsWhenActiveClassroomMissing() {
                         when(classroomRepository.findByClassroomIdAndClassroomStatusAndIsActiveTrue(99L,
                                         ClassroomStatus.ACTIVE))
@@ -154,6 +163,8 @@ class ClassroomStatisticsServiceImplTest {
                 }
 
                 @Test
+
+                @DisplayName("LH_TK_05 - Đảm bảo thống kê xu hướng cải thiện hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
                 void getImprovementTrend_returnsStableTrendWhenNoCompletedExams() {
                         // Given: Lớp học có 1 bài thi sắp tới (chưa diễn ra)
                         Classroom classroom = Classroom.builder()

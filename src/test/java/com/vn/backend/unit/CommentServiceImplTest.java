@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.comment.CommentCreateRequest;
 import com.vn.backend.dto.request.comment.CommentDeleteRequest;
 import com.vn.backend.dto.request.comment.CommentListRequest;
@@ -256,6 +259,7 @@ class CommentServiceImplTest {
     class CreateCommentTests {
 
         @Test
+        @DisplayName("LH_BL_01 - Đảm bảo tạo bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void createComment_Success_WhenUserIsActiveMember() {
             // Given: Người dùng đã đăng nhập, thông báo cho phép bình luận và người dùng là
             // thành viên lớp đang hoạt động
@@ -284,6 +288,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_02 - Đảm bảo tạo bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void createComment_Success_WhenUserIsTeacher() {
             // Given: Người dùng là giáo viên của lớp học
             mockCurrentUser(USER_ID);
@@ -302,6 +307,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_03 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void createComment_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(USER_ID);
             mockAnnouncementMissing();
@@ -312,6 +318,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_04 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when user is not class member.")
         void createComment_Fail_ThrowsWhenUserIsNotClassMember() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -324,6 +331,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_05 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when member is not active.")
         void createComment_Fail_ThrowsWhenMemberIsNotActive() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -336,6 +344,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_06 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when announcement disables comments.")
         void createComment_Fail_ThrowsWhenAnnouncementDisablesComments() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(false);
@@ -354,6 +363,7 @@ class CommentServiceImplTest {
     class GetCommentListTests {
 
         @Test
+        @DisplayName("LH_BL_07 - Đảm bảo xem danh sách bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getCommentList_Success_ReturnsCommentsForActiveMember() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -381,6 +391,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_08 - Đảm bảo xem danh sách bình luận xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void getCommentList_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(USER_ID);
             mockAnnouncementMissing();
@@ -393,6 +404,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_09 - Đảm bảo xem danh sách bình luận xử lý đúng trường hợp lỗi: fail_throws when user has no classroom access.")
         void getCommentList_Fail_ThrowsWhenUserHasNoClassroomAccess() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -414,6 +426,7 @@ class CommentServiceImplTest {
     class UpdateCommentTests {
 
         @Test
+        @DisplayName("LH_BL_10 - Đảm bảo cập nhật bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateComment_Success_UpdatesOwnComment() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -431,6 +444,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_11 - Đảm bảo cập nhật bình luận xử lý đúng trường hợp lỗi: fail_throws when comment missing.")
         void updateComment_Fail_ThrowsWhenCommentMissing() {
             mockCurrentUser(USER_ID);
 
@@ -440,6 +454,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_12 - Đảm bảo cập nhật bình luận xử lý đúng trường hợp lỗi: fail_throws when other user tries to edit.")
         void updateComment_Fail_ThrowsWhenOtherUserTriesToEdit() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -452,6 +467,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_13 - Đảm bảo cập nhật bình luận xử lý đúng trường hợp lỗi: fail_throws when teacher tries to edit student comment.")
         void updateComment_Fail_ThrowsWhenTeacherTriesToEditStudentComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -471,6 +487,7 @@ class CommentServiceImplTest {
     class DeleteCommentTests {
 
         @Test
+        @DisplayName("LH_BL_14 - Đảm bảo xóa bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteComment_Success_SoftDeletesOwnComment() {
             // Given: Người dùng đã đăng nhập và có 1 bình luận ID 6
             mockCurrentUser(USER_ID);
@@ -485,6 +502,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_15 - Đảm bảo xóa bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteComment_Success_TeacherDeletesStudentComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -497,6 +515,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_16 - Đảm bảo xóa bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteComment_Success_AssistantDeletesStudentComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -510,6 +529,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_17 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when comment missing.")
         void deleteComment_Fail_ThrowsWhenCommentMissing() {
             mockCurrentUser(USER_ID);
 
@@ -519,6 +539,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_18 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when current user cannot delete others comment.")
         void deleteComment_Fail_ThrowsWhenCurrentUserCannotDeleteOthersComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -532,6 +553,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_19 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when assistant deletes teacher comment.")
         void deleteComment_Fail_ThrowsWhenAssistantDeletesTeacherComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -547,6 +569,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_20 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when assistant deletes assistant comment.")
         void deleteComment_Fail_ThrowsWhenAssistantDeletesAssistantComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);

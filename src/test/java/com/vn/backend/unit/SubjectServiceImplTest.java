@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.subject.*;
@@ -143,6 +146,7 @@ class SubjectServiceImplTest {
     class CreateSubjectTests {
 
         @Test
+        @DisplayName("HT_MH_01 - Đảm bảo tạo môn học mới thành công với mã và tên hợp lệ.")
         void createSubject_Success() {
             // Given: Thông tin môn học mới (Mã: JAVA101, Tên: Java Programming)
             SubjectCreateRequest request = createRequest("JAVA101", "Java Programming");
@@ -160,6 +164,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_02 - Đảm bảo hệ thống chặn tạo/cập nhật môn học khi mã môn học đã tồn tại.")
         void createSubject_Fail_ThrowsWhenSubjectCodeExists() {
             subjectStore.put(
                     SUBJECT_ID,
@@ -173,6 +178,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_03 - Đảm bảo validate độ dài tên môn học.")
         void createSubject_Fail_ThrowsWhenSubjectNameTooLong() {
             SubjectCreateRequest request = createRequest("JAVA101", "A".repeat(101));
 
@@ -189,6 +195,7 @@ class SubjectServiceImplTest {
     class SearchSubjectTests {
 
         @Test
+        @DisplayName("HT_MH_04 - Đảm bảo tìm kiếm môn học theo filter thành công.")
         void searchSubject_Success() {
             Subject subject = subject(SUBJECT_ID, "JAVA101", "Java Programming");
 
@@ -213,6 +220,7 @@ class SubjectServiceImplTest {
     class UpdateSubjectTests {
 
         @Test
+        @DisplayName("HT_MH_05 - Đảm bảo cập nhật cả mã và tên môn học thành công.")
         void updateSubject_Success_UpdatesCodeAndName() {
             Subject existing = subject(SUBJECT_ID, "OLD101", "Old Subject");
             subjectStore.put(SUBJECT_ID, existing);
@@ -229,6 +237,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_06 - Đảm bảo cập nhật tên môn học khi mã môn học giữ nguyên.")
         void updateSubject_Success_OnlyUpdatesNameWhenCodeSame() {
             Subject existing = subject(SUBJECT_ID, "JAVA101", "Old Subject");
             subjectStore.put(SUBJECT_ID, existing);
@@ -244,6 +253,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_07 - Đảm bảo update request null không làm mất dữ liệu cũ.")
         void updateSubject_Success_DoesNotChangeNullFields() {
             Subject existing = subject(SUBJECT_ID, "JAVA101", "Old Subject");
             subjectStore.put(SUBJECT_ID, existing);
@@ -259,6 +269,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_08 - Đảm bảo báo lỗi khi cập nhật/xóa môn học không tồn tại.")
         void updateSubject_Fail_ThrowsWhenSubjectMissing() {
             assertThrows(AppException.class, () -> service.updateSubject(
                     99L,
@@ -268,6 +279,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_09 - Đảm bảo hệ thống chặn tạo/cập nhật môn học khi mã môn học đã tồn tại.")
         void updateSubject_Fail_ThrowsWhenNewCodeExists() {
             Subject current = subject(SUBJECT_ID, "OLD101", "Old Subject");
             Subject other = subject(2L, "JAVA101", "Java Programming");
@@ -283,6 +295,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_10 - Đảm bảo validate độ dài tên môn học.")
         void updateSubject_Fail_ThrowsWhenSubjectNameTooLong() {
             Subject existing = subject(SUBJECT_ID, "JAVA101", "Old Subject");
             subjectStore.put(SUBJECT_ID, existing);
@@ -302,6 +315,7 @@ class SubjectServiceImplTest {
     class DeleteSubjectTests {
 
         @Test
+        @DisplayName("HT_MH_11 - Đảm bảo xóa mềm môn học thành công.")
         void deleteSubject_Success_SoftDeletesSubject() {
             Subject existing = subject(SUBJECT_ID, "JAVA101", "Java Programming");
             subjectStore.put(SUBJECT_ID, existing);
@@ -315,6 +329,7 @@ class SubjectServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_MH_12 - Đảm bảo báo lỗi khi cập nhật/xóa môn học không tồn tại.")
         void deleteSubject_Fail_ThrowsWhenSubjectMissing() {
             assertThrows(AppException.class, () -> service.deleteSubject(99L));
 

@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.invitation.JoinClassroomByCodeRequest;
 import com.vn.backend.dto.request.invitation.SendBulkInvitationRequest;
 import com.vn.backend.entities.ClassMember;
@@ -286,6 +289,7 @@ class InvitationServiceImplTest {
     class SendBulkInvitationTests {
 
         @Test
+        @DisplayName("LH_TV_01 - Đảm bảo gửi lời mời tham gia lớp hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void sendBulkInvitation_Success_TeacherInvitesStudents() {
             // Given: Người gửi là Giáo viên, lớp học tồn tại, sinh viên được mời cũng tồn
             // tại và chưa tham gia lớp
@@ -322,6 +326,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_02 - Đảm bảo gửi lời mời tham gia lớp hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void sendBulkInvitation_Success_AssistantInvitesStudent() {
             // Given: Người gửi là Trợ giảng, lớp học tồn tại và trợ giảng có quyền mời
             mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
@@ -342,6 +347,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_03 - Đảm bảo gửi lời mời tham gia lớp xử lý đúng trường hợp lỗi: fail_throws when classroom missing.")
         void sendBulkInvitation_Fail_ThrowsWhenClassroomMissing() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdMissing();
@@ -353,6 +359,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_04 - Đảm bảo gửi lời mời tham gia lớp xử lý đúng trường hợp lỗi: fail_throws when sender is not teacher or assistant.")
         void sendBulkInvitation_Fail_ThrowsWhenSenderIsNotTeacherOrAssistant() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockClassroomFindByIdExists();
@@ -368,6 +375,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_05 - Đảm bảo gửi lời mời tham gia lớp xử lý đúng trường hợp lỗi: fail_throws when assistant invites assistant.")
         void sendBulkInvitation_Fail_ThrowsWhenAssistantInvitesAssistant() {
             mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
             mockClassroomFindByIdExists();
@@ -383,6 +391,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_06 - Đảm bảo gửi lời mời tham gia lớp xử lý đúng trường hợp lỗi: fail_throws when teacher user invited as student.")
         void sendBulkInvitation_Fail_ThrowsWhenTeacherUserInvitedAsStudent() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
@@ -396,6 +405,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_07 - Đảm bảo gửi lời mời tham gia lớp xử lý đúng trường hợp lỗi: fail_throws when student user invited as assistant.")
         void sendBulkInvitation_Fail_ThrowsWhenStudentUserInvitedAsAssistant() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
@@ -409,6 +419,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_08 - Đảm bảo gửi lời mời tham gia lớp bỏ qua đúng các đối tượng không đủ điều kiện, không tạo dữ liệu sai.")
         void sendBulkInvitation_SkipsMissingUser() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
@@ -429,6 +440,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_09 - Đảm bảo gửi lời mời tham gia lớp bỏ qua đúng các đối tượng không đủ điều kiện, không tạo dữ liệu sai.")
         void sendBulkInvitation_SkipsAlreadyActiveMember() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
@@ -444,6 +456,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_10 - Đảm bảo gửi lời mời tham gia lớp bỏ qua đúng các đối tượng không đủ điều kiện, không tạo dữ liệu sai.")
         void sendBulkInvitation_SkipsWhenPendingInvitationExists() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
@@ -460,6 +473,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_11 - Đảm bảo gửi lời mời tham gia lớp bỏ qua đúng các đối tượng không đủ điều kiện, không tạo dữ liệu sai.")
         void sendBulkInvitation_SkipsWhenAcceptedInvitationExists() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
@@ -483,6 +497,7 @@ class InvitationServiceImplTest {
     class JoinClassroomByCodeTests {
 
         @Test
+        @DisplayName("LH_TV_12 - Đảm bảo tham gia lớp bằng mã hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void joinClassroomByCode_Success_CreatesNewClassMemberAndNotifiesTeacherAndAssistants() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomByCode(ClassCodeStatus.ACTIVE);
@@ -520,6 +535,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_13 - Đảm bảo tham gia lớp bằng mã hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void joinClassroomByCode_Success_ReactivatesInactiveMember() {
             // Given: Sinh viên đã từng tham gia lớp nhưng hiện tại ở trạng thái INACTIVE
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
@@ -542,6 +558,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_14 - Đảm bảo tham gia lớp bằng mã xử lý đúng trường hợp lỗi: fail_throws when class code not found.")
         void joinClassroomByCode_Fail_ThrowsWhenClassCodeNotFound() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomCodeMissing();
@@ -552,6 +569,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_15 - Đảm bảo tham gia lớp bằng mã xử lý đúng trường hợp lỗi: fail_throws when class code disabled.")
         void joinClassroomByCode_Fail_ThrowsWhenClassCodeDisabled() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomByCode(ClassCodeStatus.DISABLED);
@@ -562,6 +580,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_16 - Đảm bảo tham gia lớp bằng mã xử lý đúng trường hợp lỗi: fail_throws when user already active member.")
         void joinClassroomByCode_Fail_ThrowsWhenUserAlreadyActiveMember() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomByCode(ClassCodeStatus.ACTIVE);
@@ -573,6 +592,7 @@ class InvitationServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_TV_17 - Đảm bảo tham gia lớp bằng mã xử lý đúng trường hợp lỗi: fail_throws when pending invitation exists.")
         void joinClassroomByCode_Fail_ThrowsWhenPendingInvitationExists() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomByCode(ClassCodeStatus.ACTIVE);

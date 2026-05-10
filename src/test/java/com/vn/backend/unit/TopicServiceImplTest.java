@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.topic.CreateApprovalTopicRequest;
@@ -231,6 +234,7 @@ class TopicServiceImplTest {
     class ApprovalRequestTopicTests {
 
         @Test
+        @DisplayName("HT_CD_01 - Đảm bảo Giảng viên tạo yêu cầu duyệt chủ đề thành công, các topic mới được lưu ở trạng thái chưa active và tạo approval request.")
         void approvalRequestTopic_Success_CreatesInactiveTopicsAndApprovalRequest() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, true);
@@ -276,6 +280,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_02 - Đảm bảo chỉ Giảng viên mới được tạo đề xuất chủ đề.")
         void approvalRequestTopic_Fail_ThrowsWhenCurrentUserIsNotTeacher() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
 
@@ -290,6 +295,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_03 - Đảm bảo không cho tạo đề xuất chủ đề nếu môn học không tồn tại.")
         void approvalRequestTopic_Fail_ThrowsWhenSubjectMissing() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, false);
@@ -305,6 +311,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_04 - Đảm bảo validate danh sách topic request không được null.")
         void approvalRequestTopic_Fail_ThrowsWhenTopicRequestsNull() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, true);
@@ -318,6 +325,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_05 - Đảm bảo validate danh sách topic request không được rỗng.")
         void approvalRequestTopic_Fail_ThrowsWhenTopicRequestsEmpty() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, true);
@@ -331,6 +339,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_06 - Đảm bảo không cho tạo thêm yêu cầu chủ đề khi môn học đã có request PENDING.")
         void approvalRequestTopic_Fail_ThrowsWhenPendingRequestExistsInSameSubject() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, true);
@@ -355,6 +364,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_07 - Đảm bảo topic pending đã bị xóa không chặn tạo đề xuất mới.")
         void approvalRequestTopic_Success_IgnoresPendingDeletedTopicInSameSubject() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, true);
@@ -384,6 +394,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_08 - Đảm bảo pending request của môn học khác không chặn tạo đề xuất cho môn hiện tại.")
         void approvalRequestTopic_Success_AllowsPendingTopicInDifferentSubject() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockSubjectExists(SUBJECT_ID, true);
@@ -417,6 +428,7 @@ class TopicServiceImplTest {
     class SaveAllTopicTests {
 
         @Test
+        @DisplayName("HT_CD_09 - Đảm bảo lưu nhiều topic mới thành công và trim topicName.")
         void saveAllTopic_Success_CreatesNewTopics() {
             User teacher = user(TEACHER_ID, Role.TEACHER);
 
@@ -446,6 +458,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_10 - Đảm bảo khi topicId có sẵn thì service lấy topic hiện có thay vì tạo mới.")
         void saveAllTopic_Success_UsesExistingTopicWhenTopicIdProvided() {
             User teacher = user(TEACHER_ID, Role.TEACHER);
 
@@ -464,6 +477,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_11 - Đảm bảo validate tên chủ đề không được null khi tạo mới.")
         void saveAllTopic_Fail_ThrowsWhenTopicNameNull() {
             User teacher = user(TEACHER_ID, Role.TEACHER);
 
@@ -477,6 +491,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_12 - Đảm bảo validate tên chủ đề không được để trống/khoảng trắng.")
         void saveAllTopic_Fail_ThrowsWhenTopicNameBlank() {
             User teacher = user(TEACHER_ID, Role.TEACHER);
 
@@ -490,6 +505,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_13 - Đảm bảo báo lỗi khi request tham chiếu topicId không tồn tại.")
         void saveAllTopic_Fail_ThrowsWhenExistingTopicMissing() {
             User teacher = user(TEACHER_ID, Role.TEACHER);
 
@@ -507,6 +523,7 @@ class TopicServiceImplTest {
     class UpdateTopicTests {
 
         @Test
+        @DisplayName("HT_CD_14 - Đảm bảo Admin cập nhật tên chủ đề thành công.")
         void updateTopic_Success_UpdatesTopicName() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -523,6 +540,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_15 - Đảm bảo Admin cập nhật topic tiên quyết thành công.")
         void updateTopic_Success_UpdatesPrerequisiteTopic() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -542,6 +560,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_16 - Đảm bảo khi topicName=null thì tên cũ không bị thay đổi.")
         void updateTopic_Success_DoesNotChangeNameWhenNameIsNull() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -557,6 +576,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_17 - Đảm bảo báo lỗi khi cập nhật topic không tồn tại.")
         void updateTopic_Fail_ThrowsWhenTopicMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -568,6 +588,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_18 - Đảm bảo chỉ Admin được cập nhật chủ đề.")
         void updateTopic_Fail_ThrowsWhenCurrentUserIsNotAdmin() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -582,6 +603,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_19 - Đảm bảo topic không được chọn chính nó làm topic tiên quyết.")
         void updateTopic_Fail_ThrowsWhenPrerequisiteIsItself() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -596,6 +618,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_20 - Đảm bảo báo lỗi khi topic tiên quyết không tồn tại.")
         void updateTopic_Fail_ThrowsWhenPrerequisiteTopicMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -614,6 +637,7 @@ class TopicServiceImplTest {
     class DeleteTopicTests {
 
         @Test
+        @DisplayName("HT_CD_21 - Đảm bảo Admin xóa mềm chủ đề thành công.")
         void deleteTopic_Success_SoftDeletesTopic() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -630,6 +654,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_22 - Đảm bảo báo lỗi khi xóa topic không tồn tại.")
         void deleteTopic_Fail_ThrowsWhenTopicMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -639,6 +664,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_23 - Đảm bảo người không phải Admin không được xóa chủ đề.")
         void deleteTopic_Fail_ThrowsWhenCurrentUserIsNotAdmin() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -656,6 +682,7 @@ class TopicServiceImplTest {
     class SearchTopicsTests {
 
         @Test
+        @DisplayName("HT_CD_24 - Đảm bảo tìm kiếm chủ đề theo subjectId và keyword thành công.")
         void searchTopics_Success_WithSubjectIdAndKeyword() {
             mockSubjectExists(SUBJECT_ID, true);
 
@@ -687,6 +714,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_25 - Đảm bảo search topic hoạt động khi filters=null.")
         void searchTopics_Success_WhenFiltersNull() {
             BaseFilterSearchRequest<TopicFilterRequest> request = new BaseFilterSearchRequest<>();
 
@@ -722,6 +750,7 @@ class TopicServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_CD_26 - Đảm bảo search theo subjectId không tồn tại sẽ báo lỗi.")
         void searchTopics_Fail_ThrowsWhenSubjectMissing() {
             mockSubjectExists(SUBJECT_ID, false);
 

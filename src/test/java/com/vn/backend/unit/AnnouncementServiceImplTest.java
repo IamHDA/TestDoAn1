@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.announcement.AnnouncementCreateRequest;
 import com.vn.backend.dto.request.announcement.AnnouncementFilterRequest;
 import com.vn.backend.dto.request.announcement.AnnouncementListRequest;
@@ -412,6 +415,7 @@ class AnnouncementServiceImplTest {
     class CreateAnnouncementTests {
 
         @Test
+        @DisplayName("LH_BD_01 - Đảm bảo tạo bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void createAnnouncement_Success_PersistsAnnouncementAndAttachments() {
             // Given: Thiết lập ngữ cảnh - người dùng là giáo viên, lớp học tồn tại, có
             // quyền truy cập và được phép đăng bài
@@ -444,6 +448,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_02 - Đảm bảo tạo bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void createAnnouncement_Success_StudentCreatesGenericWhenPostAllowed() {
             // Given: Người dùng là sinh viên và cấu hình lớp học cho phép sinh viên đăng bài
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
@@ -464,6 +469,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_03 - Đảm bảo tạo bài đăng xử lý đúng trường hợp lỗi: fail_throws when classroom missing.")
         void createAnnouncement_Fail_ThrowsWhenClassroomMissing() {
             // Given: Người dùng là giáo viên nhưng lớp học không tồn tại
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
@@ -480,6 +486,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_04 - Đảm bảo tạo bài đăng xử lý đúng trường hợp lỗi: fail_throws when user has no classroom access.")
         void createAnnouncement_Fail_ThrowsWhenUserHasNoClassroomAccess() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockClassroomExists();
@@ -496,6 +503,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_05 - Đảm bảo tạo bài đăng xử lý đúng trường hợp lỗi: fail_throws when member inactive.")
         void createAnnouncement_Fail_ThrowsWhenMemberInactive() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockClassroomExists();
@@ -512,6 +520,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_06 - Đảm bảo tạo bài đăng xử lý đúng trường hợp lỗi: fail_throws when student post disabled.")
         void createAnnouncement_Fail_ThrowsWhenStudentPostDisabled() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockClassroomExists();
@@ -527,6 +536,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_07 - Đảm bảo tạo bài đăng xử lý đúng trường hợp lỗi: fail_throws when student posts material.")
         void createAnnouncement_Fail_ThrowsWhenStudentPostsMaterial() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockClassroomExists();
@@ -549,6 +559,7 @@ class AnnouncementServiceImplTest {
     class GetAnnouncementListTests {
 
         @Test
+        @DisplayName("LH_BD_08 - Đảm bảo xem danh sách bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getAnnouncementList_Success_ReturnsAnnouncementsForTeacher() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockTeacherAccess(TEACHER_ID, true);
@@ -577,6 +588,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_09 - Đảm bảo xem danh sách bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getAnnouncementList_Success_UsesFilterType() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockStudentAccess(STUDENT_ID);
@@ -600,6 +612,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_10 - Đảm bảo xem danh sách bài đăng xử lý đúng trường hợp lỗi: fail_throws when user has no classroom access.")
         void getAnnouncementList_Fail_ThrowsWhenUserHasNoClassroomAccess() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockTeacherAccess(STUDENT_ID, false);
@@ -621,6 +634,7 @@ class AnnouncementServiceImplTest {
     class GetAnnouncementDetailTests {
 
         @Test
+        @DisplayName("LH_BD_11 - Đảm bảo xem chi tiết bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getAnnouncementDetail_Success_ReturnsPermissionsForOwnerStudent() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockStudentAccess(STUDENT_ID);
@@ -639,6 +653,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_12 - Đảm bảo xem chi tiết bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getAnnouncementDetail_Success_TeacherCanEditAndDelete() {
             // Given: Người dùng là giáo viên của lớp học
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
@@ -656,6 +671,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_13 - Đảm bảo xem chi tiết bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getAnnouncementDetail_Success_NonOwnerStudentCannotEditOrDelete() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockStudentAccess(STUDENT_ID);
@@ -669,6 +685,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_14 - Đảm bảo xem chi tiết bài đăng xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void getAnnouncementDetail_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
 
@@ -676,6 +693,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_15 - Đảm bảo xem chi tiết bài đăng xử lý đúng trường hợp lỗi: fail_throws when user has no classroom access.")
         void getAnnouncementDetail_Fail_ThrowsWhenUserHasNoClassroomAccess() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockTeacherAccess(STUDENT_ID, false);
@@ -694,6 +712,7 @@ class AnnouncementServiceImplTest {
     class UpdateAnnouncementTests {
 
         @Test
+        @DisplayName("LH_BD_16 - Đảm bảo cập nhật bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateAnnouncement_Success_OwnerUpdatesAnnouncement() {
             // Given: Người dùng là sinh viên đã tạo một thông báo GENERIC
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
@@ -715,6 +734,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_17 - Đảm bảo cập nhật bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateAnnouncement_Success_TeacherUpdatesAnnouncement() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockTeacherAccess(TEACHER_ID, true);
@@ -733,6 +753,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_18 - Đảm bảo cập nhật bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateAnnouncement_Success_AddsNewAttachmentAndKeepsExistingAttachment() {
             // Given: Người dùng là giáo viên có quyền truy cập lớp học
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
@@ -763,6 +784,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_19 - Đảm bảo cập nhật bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateAnnouncement_Success_DeletesRemovedAttachment() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockTeacherAccess(TEACHER_ID, true);
@@ -784,6 +806,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_20 - Đảm bảo cập nhật bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateAnnouncement_Success_DeletesAllAttachmentsWhenRequestAttachmentsEmpty() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockTeacherAccess(TEACHER_ID, true);
@@ -806,6 +829,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_21 - Đảm bảo cập nhật bài đăng xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void updateAnnouncement_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -817,6 +841,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_22 - Đảm bảo cập nhật bài đăng xử lý đúng trường hợp lỗi: fail_throws when assistant edits others announcement.")
         void updateAnnouncement_Fail_ThrowsWhenAssistantEditsOthersAnnouncement() {
             mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
             mockAssistantAccess(ASSISTANT_ID);
@@ -831,6 +856,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_23 - Đảm bảo cập nhật bài đăng xử lý đúng trường hợp lỗi: fail_throws when student edits others announcement.")
         void updateAnnouncement_Fail_ThrowsWhenStudentEditsOthersAnnouncement() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockStudentAccess(STUDENT_ID);
@@ -852,6 +878,7 @@ class AnnouncementServiceImplTest {
     class DeleteAnnouncementTests {
 
         @Test
+        @DisplayName("LH_BD_24 - Đảm bảo xóa bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteAnnouncement_Success_OwnerDeletesAnnouncement() {
             // Given: Người dùng là sinh viên đã tạo thông báo trước đó
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
@@ -867,6 +894,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_25 - Đảm bảo xóa bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteAnnouncement_Success_TeacherDeletesAnnouncement() {
             // Given: Giáo viên đăng nhập và muốn xóa một thông báo của sinh viên
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
@@ -883,6 +911,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_26 - Đảm bảo xóa bài đăng xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void deleteAnnouncement_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -892,6 +921,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_27 - Đảm bảo xóa bài đăng xử lý đúng trường hợp lỗi: fail_throws when student deletes others announcement.")
         void deleteAnnouncement_Fail_ThrowsWhenStudentDeletesOthersAnnouncement() {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockStudentAccess(STUDENT_ID);
@@ -905,6 +935,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_28 - Đảm bảo xóa bài đăng xử lý đúng trường hợp lỗi: fail_throws when assistant deletes others announcement.")
         void deleteAnnouncement_Fail_ThrowsWhenAssistantDeletesOthersAnnouncement() {
             mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
             mockAssistantAccess(ASSISTANT_ID);
@@ -922,6 +953,7 @@ class AnnouncementServiceImplTest {
     class NotifyAnnouncementTests {
 
         @Test
+        @DisplayName("LH_BD_29 - Đảm bảo gửi thông báo bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void notifyAnnouncement_UsesObjectIdWhenObjectIdExists() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -942,6 +974,7 @@ class AnnouncementServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BD_30 - Đảm bảo gửi thông báo bài đăng hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void notifyAnnouncement_UsesAnnouncementIdWhenObjectIdIsNull() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 

@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.user.*;
 import com.vn.backend.dto.response.UserResponse;
@@ -250,6 +253,7 @@ class UserServiceImplTest {
     class CreateUserTests {
 
         @Test
+        @DisplayName("HT_TK_01 - Đảm bảo luồng tạo mới tài khoản thủ công với đầy đủ thông tin định danh và gán vai trò.")
         void createUser_Success() {
             // Given & When: Thực hiện tạo người dùng mới từ request mẫu
             service.createUser(createRequest());
@@ -271,6 +275,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_02 - Đảm bảo hệ thống chặn tạo/cập nhật tài khoản khi username đã tồn tại.")
         void createUser_Fail_ThrowsWhenUsernameExists() {
             userStore.put(1L, user(1L, "student01", "old@example.com", "OLD001", Role.STUDENT));
 
@@ -280,6 +285,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_03 - Đảm bảo hệ thống chặn tạo/cập nhật tài khoản khi email đã tồn tại.")
         void createUser_Fail_ThrowsWhenEmailExists() {
             userStore.put(1L, user(1L, "old", "student01@example.com", "OLD001", Role.STUDENT));
 
@@ -289,6 +295,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_04 - Đảm bảo hệ thống chặn tạo tài khoản khi mã định danh đã tồn tại.")
         void createUser_Fail_ThrowsWhenCodeExists() {
             userStore.put(1L, user(1L, "old", "old@example.com", "SV001", Role.STUDENT));
 
@@ -298,6 +305,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_05 - Đảm bảo validate độ dài họ tên người dùng.")
         void createUser_Fail_ThrowsWhenFullNameTooLong() {
             CreateUserRequest request = createRequest();
             request.setFullName("A".repeat(51));
@@ -306,6 +314,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_06 - Đảm bảo validate độ dài email người dùng.")
         void createUser_Fail_ThrowsWhenEmailTooLong() {
             CreateUserRequest request = createRequest();
             request.setEmail("a".repeat(321));
@@ -321,6 +330,7 @@ class UserServiceImplTest {
     class UpdateUserTests {
 
         @Test
+        @DisplayName("HT_TK_07 - Đảm bảo cập nhật tài khoản thành công khi User tồn tại và dữ liệu hợp lệ.")
         void updateUser_Success() {
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             userStore.put(USER_ID, existing);
@@ -341,6 +351,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_08 - Đảm bảo cập nhật thông tin khác không gây lỗi trùng khi username/email giữ nguyên.")
         void updateUser_Success_DoesNotChangeUsernameAndEmailWhenSameValue() {
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             userStore.put(USER_ID, existing);
@@ -358,6 +369,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_09 - Đảm bảo xử lý lỗi khi User cần cập nhật/trạng thái/tra cứu không tồn tại.")
         void updateUser_Fail_ThrowsWhenUserMissing() {
             assertThrows(AppException.class, () -> service.updateUser(99L, updateRequest()));
 
@@ -365,6 +377,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_10 - Đảm bảo hệ thống chặn tạo/cập nhật tài khoản khi username đã tồn tại.")
         void updateUser_Fail_ThrowsWhenUsernameExists() {
             User current = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             User other = user(2L, "student02", "other@example.com", "SV002", Role.STUDENT);
@@ -379,6 +392,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_11 - Đảm bảo hệ thống chặn tạo/cập nhật tài khoản khi email đã tồn tại.")
         void updateUser_Fail_ThrowsWhenEmailExists() {
             User current = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             User other = user(2L, "student02", "student02@example.com", "SV002", Role.STUDENT);
@@ -393,6 +407,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_12 - Đảm bảo validate độ dài họ tên người dùng.")
         void updateUser_Fail_ThrowsWhenFullNameTooLong() {
             userStore.put(USER_ID, user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT));
 
@@ -403,6 +418,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_13 - Đảm bảo validate độ dài email người dùng.")
         void updateUser_Fail_ThrowsWhenEmailTooLong() {
             userStore.put(USER_ID, user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT));
 
@@ -420,6 +436,7 @@ class UserServiceImplTest {
     class UpdateUserStatusTests {
 
         @Test
+        @DisplayName("HT_TK_14 - Đảm bảo Admin có thể khóa/vô hiệu hóa tài khoản.")
         void updateUserStatus_Success_DeactivatesUser() {
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             userStore.put(USER_ID, existing);
@@ -432,6 +449,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_15 - Đảm bảo Admin có thể mở khóa/kích hoạt lại tài khoản.")
         void updateUserStatus_Success_ActivatesUser() {
             // Given: Người dùng hiện đang ở trạng thái INACTIVE (isActive = false)
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
@@ -446,6 +464,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_16 - Đảm bảo xử lý lỗi khi User cần cập nhật/trạng thái/tra cứu không tồn tại.")
         void updateUserStatus_Fail_ThrowsWhenUserMissing() {
             assertThrows(AppException.class, () -> service.updateUserStatus(99L, StatusUser.ACTIVE));
 
@@ -460,6 +479,7 @@ class UserServiceImplTest {
     class GetUsersTests {
 
         @Test
+        @DisplayName("HT_TK_17 - Đảm bảo lấy danh sách user dùng truy vấn mặc định khi không có filter.")
         void getUsers_Success_UsesFindUsersWhenNoFilters() {
             UserSearchRequest request = userSearchRequest(null);
 
@@ -475,6 +495,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_18 - Đảm bảo tìm kiếm user theo search, role và status.")
         void getUsers_Success_UsesFindByFiltersWhenSearchProvided() {
             UserFilterRequest filters = new UserFilterRequest();
             filters.setSearch("student");
@@ -504,6 +525,7 @@ class UserServiceImplTest {
     class DownloadUserImportTemplateTests {
 
         @Test
+        @DisplayName("HT_TK_19 - Đảm bảo tải template Excel import người dùng.")
         void downloadUserImportTemplate_Success_ReturnsExcelResource() {
             ByteArrayResource resource = service.downloadUserImportTemplate();
 
@@ -519,6 +541,7 @@ class UserServiceImplTest {
     class ImportUsersFromExcelTests {
 
         @Test
+        @DisplayName("HT_TK_20 - Đảm bảo import thành công một dòng user hợp lệ từ Excel.")
         void importUsersFromExcel_Success_ImportsValidRows() throws Exception {
             // Given: Một file Excel giả lập chứa thông tin 1 sinh viên hợp lệ
             MultipartFile file = excelFile(List.of(
@@ -544,6 +567,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_21 - Đảm bảo hệ thống tự sinh mã khi file Excel không có code.")
         void importUsersFromExcel_Success_GeneratesCodeWhenCodeBlank() throws Exception {
             MultipartFile file = excelFile(List.of(
                     List.of("1", "Nguyen Van A", "", "a@example.com", "0123456789", "2000-01-01", "MALE", "Ha Noi",
@@ -560,6 +584,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_22 - Đảm bảo phát hiện email bị trùng ngay trong file import.")
         void importUsersFromExcel_Fail_ThrowsWhenEmailDuplicatedInFile() throws Exception {
             MultipartFile file = excelFile(List.of(
                     List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
@@ -573,6 +598,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_23 - Đảm bảo phát hiện code bị trùng ngay trong file import.")
         void importUsersFromExcel_Fail_ThrowsWhenCodeDuplicatedInFile() throws Exception {
             MultipartFile file = excelFile(List.of(
                     List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
@@ -586,6 +612,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_24 - Đảm bảo import từ chối role không hợp lệ.")
         void importUsersFromExcel_Fail_ThrowsWhenRoleInvalid() throws Exception {
             MultipartFile file = excelFile(List.of(
                     List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
@@ -597,6 +624,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_25 - Đảm bảo import từ chối dòng thiếu trường bắt buộc.")
         void importUsersFromExcel_Fail_ThrowsWhenRequiredFieldsMissing() throws Exception {
             MultipartFile file = excelFile(List.of(
                     List.of("1", "", "SV001", "", "0123456789", "01/01/2000", "MALE", "Ha Noi", "")));
@@ -607,6 +635,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_26 - Đảm bảo hệ thống chặn tạo/cập nhật tài khoản khi email đã tồn tại.")
         void importUsersFromExcel_Fail_ThrowsWhenEmailExistsInSystem() throws Exception {
             userStore.put(1L, user(1L, "old", "a@example.com", "OLD001", Role.STUDENT));
 
@@ -620,6 +649,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_27 - Đảm bảo hệ thống chặn tạo tài khoản khi mã định danh đã tồn tại.")
         void importUsersFromExcel_Fail_ThrowsWhenCodeExistsInSystem() throws Exception {
             userStore.put(1L, user(1L, "old", "old@example.com", "SV001", Role.STUDENT));
 
@@ -640,6 +670,7 @@ class UserServiceImplTest {
     class GetUserByIdTests {
 
         @Test
+        @DisplayName("HT_TK_28 - Đảm bảo xem chi tiết user theo ID thành công.")
         void getUserById_Success() {
             // Given: Người dùng tồn tại trong hệ thống
             userStore.put(USER_ID, user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT));
@@ -654,6 +685,7 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_TK_29 - Đảm bảo xử lý lỗi khi User cần cập nhật/trạng thái/tra cứu không tồn tại.")
         void getUserById_Fail_ThrowsWhenUserMissing() {
             assertThrows(AppException.class, () -> service.getUserById(99L));
         }
@@ -666,6 +698,7 @@ class UserServiceImplTest {
     class SearchUsersForInviteTests {
 
         @Test
+        @DisplayName("HT_TK_30 - Đảm bảo tìm kiếm user để mời vào lớp loại trừ current user và đúng vai trò.")
         void searchUsersForInvite_Success() {
             User currentUser = user(99L, "current", "current@example.com", "CURRENT", Role.TEACHER);
             when(authService.getCurrentUser()).thenReturn(currentUser);

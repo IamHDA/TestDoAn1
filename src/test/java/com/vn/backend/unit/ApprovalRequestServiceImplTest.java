@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.approval.ApprovalRequestSearchRequest;
 import com.vn.backend.dto.request.approval.ApprovalRequestSearchRequestDTO;
 import com.vn.backend.dto.request.approval.ApproveRejectRequest;
@@ -448,6 +451,7 @@ class ApprovalRequestServiceImplTest {
     class GetApprovalRequestDetailTests {
 
         @Test
+        @DisplayName("HT_DY_01 - Đảm bảo Admin xem chi tiết yêu cầu tạo lớp thành công.")
         void getApprovalRequestDetail_Success_ClassCreate() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -470,6 +474,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_02 - Đảm bảo Admin xem chi tiết yêu cầu tạo chủ đề thành công.")
         void getApprovalRequestDetail_Success_TopicCreate() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -496,6 +501,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_03 - Đảm bảo Admin xem chi tiết yêu cầu duyệt câu hỏi ôn tập thành công.")
         void getApprovalRequestDetail_Success_QuestionReviewCreate() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -526,6 +532,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_04 - Đảm bảo báo lỗi khi yêu cầu duyệt không tồn tại.")
         void getApprovalRequestDetail_Fail_ThrowsWhenRequestMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -533,6 +540,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_05 - Đảm bảo giảng viên không xem được yêu cầu của giảng viên khác.")
         void getApprovalRequestDetail_Fail_TeacherCannotAccessOtherTeacherRequest() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -551,6 +559,7 @@ class ApprovalRequestServiceImplTest {
     class SearchApprovalRequestTests {
 
         @Test
+        @DisplayName("HT_DY_06 - Đảm bảo Admin tìm kiếm tất cả yêu cầu duyệt.")
         void searchApprovalRequest_Success_AdminSearchesAll() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -573,6 +582,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_07 - Đảm bảo Giảng viên tìm kiếm yêu cầu do mình tạo.")
         void searchApprovalRequest_Success_TeacherSearchesOwnRequests() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -599,6 +609,7 @@ class ApprovalRequestServiceImplTest {
     class ApproveRequestTests {
 
         @Test
+        @DisplayName("HT_DY_08 - Đảm bảo Admin duyệt yêu cầu tạo lớp thành công.")
         void approveRequest_Success_ApprovesClassCreateRequest() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -624,6 +635,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_09 - Đảm bảo Admin duyệt yêu cầu tạo chủ đề thành công.")
         void approveRequest_Success_ApprovesTopicCreateRequest() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -654,6 +666,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_10 - Đảm bảo Admin duyệt câu hỏi vào ngân hàng ôn tập thành công.")
         void approveRequest_Success_ApprovesQuestionReviewCreateRequest() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -704,6 +717,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_11 - Đảm bảo chỉ Admin mới được duyệt yêu cầu.")
         void approveRequest_Fail_ThrowsWhenCurrentUserIsNotAdmin() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -713,6 +727,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_12 - Đảm bảo báo lỗi khi duyệt request không tồn tại.")
         void approveRequest_Fail_ThrowsWhenRequestMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -720,6 +735,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_13 - Đảm bảo không cho duyệt request đã xử lý.")
         void approveRequest_Fail_ThrowsWhenRequestIsNotPending() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -734,6 +750,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_14 - Đảm bảo duyệt yêu cầu tạo chủ đề thất bại khi không tìm thấy topic hợp lệ.")
         void approveRequest_Fail_ThrowsWhenTopicRequestHasNoTopics() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -748,6 +765,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_15 - Đảm bảo không duyệt câu hỏi đã bị xóa.")
         void approveRequest_Fail_ThrowsWhenQuestionIsDeleted() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -765,6 +783,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_16 - Đảm bảo không duyệt câu hỏi khi topic của câu hỏi không active.")
         void approveRequest_Fail_ThrowsWhenQuestionTopicInactive() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -785,6 +804,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_17 - Đảm bảo duyệt tạo lớp thất bại khi request không có item classroom.")
         void approveRequest_Fail_ThrowsWhenClassCreateItemMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -806,6 +826,7 @@ class ApprovalRequestServiceImplTest {
     class RejectRequestTests {
 
         @Test
+        @DisplayName("HT_DY_18 - Đảm bảo Admin từ chối yêu cầu đang chờ duyệt thành công.")
         void rejectRequest_Success_RejectsPendingRequest() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -826,6 +847,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_19 - Đảm bảo chỉ Admin mới được từ chối yêu cầu.")
         void rejectRequest_Fail_ThrowsWhenCurrentUserIsNotAdmin() {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
 
@@ -837,6 +859,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_20 - Đảm bảo từ chối request không tồn tại sẽ báo lỗi.")
         void rejectRequest_Fail_ThrowsWhenRequestMissing() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -846,6 +869,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_21 - Đảm bảo không từ chối request đã được xử lý.")
         void rejectRequest_Fail_ThrowsWhenRequestIsNotPending() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -862,6 +886,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_22 - Đảm bảo validate lý do từ chối không được để trống.")
         void rejectRequest_Fail_ThrowsWhenRejectReasonIsBlank() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
@@ -878,6 +903,7 @@ class ApprovalRequestServiceImplTest {
         }
 
         @Test
+        @DisplayName("HT_DY_23 - Đảm bảo validate lý do từ chối không được null.")
         void rejectRequest_Fail_ThrowsWhenRejectReasonIsNull() {
             mockCurrentUser(ADMIN_ID, Role.ADMIN);
 
