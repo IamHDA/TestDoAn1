@@ -69,6 +69,9 @@ class QuestionServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // Manually call constructor to ensure coverage of constructor and super()
+        questionService = new QuestionServiceImpl(messageUtils, questionRepository, answerRepository, approvalRequestService, authService, topicRepository);
+
         teacherUser = User.builder().id(1L).username("teacher").role(Role.TEACHER).build();
         adminUser = User.builder().id(2L).username("admin").role(Role.ADMIN).build();
         studentUser = User.builder().id(3L).username("student").role(Role.STUDENT).build();
@@ -80,144 +83,144 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_QLT_01: Tạo câu hỏi thành công (Single Choice)")
-    void test_TC_QLT_01_CreateQuestion_Success_SingleChoice() {
+    @DisplayName("TC_Q_01: Tạo câu hỏi thành công (Single Choice)")
+    void test_TC_Q_01_CreateQuestion_Success_SingleChoice() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
         req.setType(QuestionType.SINGLE_CHOICE);
         req.setAnswers(List.of(
-            createAnsReq("A", true), createAnsReq("B", false)
+                createAnsReq("A", true), createAnsReq("B", false)
         ));
 
         Question savedQ = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.saveAndFlush(any())).thenReturn(savedQ);
         when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
-        
+
         QuestionDetailResponse res = questionService.createQuestion(req);
         assertThat(res).isNotNull();
         verify(answerRepository, times(2)).save(any());
     }
 
     @Test
-    @DisplayName("TC_QLT_02: Tạo câu hỏi Multiple Choice hợp lệ")
-    void test_TC_QLT_02_CreateQuestion_Success_MultiChoice() {
+    @DisplayName("TC_Q_02: Tạo câu hỏi Multiple Choice hợp lệ")
+    void test_TC_Q_02_CreateQuestion_Success_MultiChoice() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
         req.setType(QuestionType.MULTI_CHOICE);
         req.setAnswers(List.of(
-            createAnsReq("A", true), createAnsReq("B", true), createAnsReq("C", false)
+                createAnsReq("A", true), createAnsReq("B", true), createAnsReq("C", false)
         ));
 
         Question savedQ = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.saveAndFlush(any())).thenReturn(savedQ);
         when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
-        
+
         assertThatCode(() -> questionService.createQuestion(req)).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("TC_QLT_03: Tạo câu hỏi thất bại do Topic không tồn tại")
-    void test_TC_QLT_03_CreateQuestion_Fail_TopicNotFound() {
+    @DisplayName("TC_Q_03: Tạo câu hỏi thất bại do Topic không tồn tại")
+    void test_TC_Q_03_CreateQuestion_Fail_TopicNotFound() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(99L)).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
 
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(99L);
-        
+
         assertThatThrownBy(() -> questionService.createQuestion(req))
-            .isInstanceOf(AppException.class)
-            .hasMessage("Not Found");
+                .isInstanceOf(AppException.class)
+                .hasMessage("Not Found");
     }
 
     @Test
-    @DisplayName("TC_QLT_04: Tạo câu hỏi thất bại do Topic bị vô hiệu hóa")
-    void test_TC_QLT_04_CreateQuestion_Fail_TopicInactive() {
+    @DisplayName("TC_Q_04: Tạo câu hỏi thất bại do Topic bị vô hiệu hóa")
+    void test_TC_Q_04_CreateQuestion_Fail_TopicInactive() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.empty()); // inactive will return empty here
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
 
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
-        
+
         assertThatThrownBy(() -> questionService.createQuestion(req))
-            .isInstanceOf(AppException.class);
+                .isInstanceOf(AppException.class);
     }
 
     @Test
-    @DisplayName("TC_QLT_05: Tạo câu hỏi thất bại do không có đáp án")
-    void test_TC_QLT_05_CreateQuestion_Fail_EmptyAnswers() {
+    @DisplayName("TC_Q_05: Tạo câu hỏi thất bại do không có đáp án")
+    void test_TC_Q_05_CreateQuestion_Fail_EmptyAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
         req.setAnswers(new ArrayList<>());
-        
+
         assertThatThrownBy(() -> questionService.createQuestion(req))
-            .isInstanceOf(AppException.class)
-            .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
     }
 
     @Test
-    @DisplayName("TC_QLT_06: Tạo câu hỏi thất bại do thiếu đáp án ĐÚNG")
-    void test_TC_QLT_06_CreateQuestion_Fail_NoCorrectAnswer() {
+    @DisplayName("TC_Q_06: Tạo câu hỏi thất bại do thiếu đáp án ĐÚNG")
+    void test_TC_Q_06_CreateQuestion_Fail_NoCorrectAnswer() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
         req.setAnswers(List.of(createAnsReq("A", false), createAnsReq("B", false)));
-        
+
         assertThatThrownBy(() -> questionService.createQuestion(req))
-            .isInstanceOf(AppException.class)
-            .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
     }
 
     @Test
-    @DisplayName("TC_QLT_07: Bẫy Single Choice có quá 1 đáp án đúng")
-    void test_TC_QLT_07_CreateQuestion_Fail_SingleChoiceMultiCorrect() {
+    @DisplayName("TC_Q_07: Bẫy Single Choice có quá 1 đáp án đúng")
+    void test_TC_Q_07_CreateQuestion_Fail_SingleChoiceMultiCorrect() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
         req.setType(QuestionType.SINGLE_CHOICE);
         req.setAnswers(List.of(createAnsReq("A", true), createAnsReq("B", true)));
-        
+
         assertThatThrownBy(() -> questionService.createQuestion(req))
-            .isInstanceOf(AppException.class)
-            .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
     }
 
     @Test
-    @DisplayName("TC_QLT_08: Bẫy Single Choice nhưng có dưới 2 lựa chọn")
-    void test_TC_QLT_08_CreateQuestion_Fail_SingleChoiceOnlyOneOption() {
+    @DisplayName("TC_Q_08: Bẫy Single Choice nhưng có dưới 2 lựa chọn")
+    void test_TC_Q_08_CreateQuestion_Fail_SingleChoiceOnlyOneOption() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionCreateRequest req = new QuestionCreateRequest();
         req.setTopicId(10L);
         req.setType(QuestionType.SINGLE_CHOICE);
         req.setAnswers(List.of(createAnsReq("A", true)));
-        
+
         assertThatThrownBy(() -> questionService.createQuestion(req))
-            .isInstanceOf(AppException.class)
-            .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
     }
 
     @Test
-    @DisplayName("TC_QLT_09: Tạo hàng loạt thành công")
-    void test_TC_QLT_09_BulkCreate_Success() {
+    @DisplayName("TC_Q_09: Tạo hàng loạt thành công")
+    void test_TC_Q_09_BulkCreate_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionBulkCreateItemRequest item = new QuestionBulkCreateItemRequest();
         item.setTopicId(10L);
         item.setType(QuestionType.SINGLE_CHOICE);
@@ -226,17 +229,17 @@ class QuestionServiceImplTest {
         Question savedQ = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.saveAndFlush(any())).thenReturn(savedQ);
         when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
-        
+
         List<QuestionDetailResponse> res = questionService.createQuestions(List.of(item));
         assertThat(res).hasSize(1);
     }
 
     @Test
-    @DisplayName("TC_QLT_10: Phá vỡ chuỗi do một phần tử con gặp lỗi")
-    void test_TC_QLT_10_BulkCreate_Fail_OneItemMissingAnswers() {
+    @DisplayName("TC_Q_10: Phá vỡ chuỗi do một phần tử con gặp lỗi")
+    void test_TC_Q_10_BulkCreate_Fail_OneItemMissingAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
-        
+
         QuestionBulkCreateItemRequest itemValid = new QuestionBulkCreateItemRequest();
         itemValid.setTopicId(10L);
         itemValid.setType(QuestionType.SINGLE_CHOICE);
@@ -246,9 +249,14 @@ class QuestionServiceImplTest {
         itemInvalid.setTopicId(10L);
         itemInvalid.setAnswers(null);
 
+        // Cần mock đầy đủ để itemValid chạy qua được bước mapping kết quả, sau đó mới tới itemInvalid gây lỗi
+        Question savedQ = Question.builder().questionId(100L).topicId(10L).build();
+        when(questionRepository.saveAndFlush(any())).thenReturn(savedQ);
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
+
         assertThatThrownBy(() -> questionService.createQuestions(List.of(itemValid, itemInvalid)))
-            .isInstanceOf(AppException.class)
-            .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
     }
 
     // =========================================================================================
@@ -256,13 +264,13 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_QLT_11: Xem chi tiết câu hỏi thành công")
-    void test_TC_QLT_11_GetDetail_Success() {
+    @DisplayName("TC_Q_11: Xem chi tiết câu hỏi thành công")
+    void test_TC_Q_11_GetDetail_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
         when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
-        
+
         Answer a1 = Answer.builder().answerId(1L).content("A").isDeleted(false).build();
         when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(new ArrayList<>(List.of(a1)));
 
@@ -272,13 +280,13 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_12: Xem chi tiết tự động ẩn đáp án đã xóa")
-    void test_TC_QLT_12_GetDetail_HidesDeletedAnswers() {
+    @DisplayName("TC_Q_12: Xem chi tiết tự động ẩn đáp án đã xóa")
+    void test_TC_Q_12_GetDetail_HidesDeletedAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).topicId(10L).build();
         when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
         when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
-        
+
         Answer a1 = Answer.builder().answerId(1L).content("A").isDeleted(false).build();
         Answer a2 = Answer.builder().answerId(2L).content("B").isDeleted(true).build(); // Deleted
         when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(new ArrayList<>(List.of(a1, a2)));
@@ -289,66 +297,66 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_13: Ngăn chặn truy cập thẻ đã bị thu hồi")
-    void test_TC_QLT_13_GetDetail_Fail_SoftDeleted() {
+    @DisplayName("TC_Q_13: Ngăn chặn truy cập thẻ đã bị thu hồi")
+    void test_TC_Q_13_GetDetail_Fail_SoftDeleted() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
         when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
 
         assertThatThrownBy(() -> questionService.getQuestionDetail(100L))
-            .isInstanceOf(AppException.class)
-            .hasMessage("Not Found");
+                .isInstanceOf(AppException.class)
+                .hasMessage("Not Found");
     }
 
     @Test
-    @DisplayName("TC_QLT_14: Tìm kiếm quyền Quản trị viên (Admin Layer)")
-    void test_TC_QLT_14_Search_Admin() {
+    @DisplayName("TC_Q_14: Tìm kiếm quyền Quản trị viên (Admin Layer)")
+    void test_TC_Q_14_Search_Admin() {
         when(authService.getCurrentUser()).thenReturn(adminUser);
         BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
-        
+
         Question q = Question.builder().questionId(1L).topic(topic).build();
         Page<Question> page = new PageImpl<>(List.of(q));
-        
+
         when(questionRepository.searchQuestionsForAdmin(any(), any(), any(), any(), any(), any())).thenReturn(page);
-        
+
         ResponseListData<QuestionSearchResponse> res = questionService.searchQuestions(req);
         assertThat(res.getContent()).hasSize(1);
         verify(questionRepository).searchQuestionsForAdmin(any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("TC_QLT_15: Tìm kiếm quyền Giáo viên (Teacher Layer)")
-    void test_TC_QLT_15_Search_Teacher() {
+    @DisplayName("TC_Q_15: Tìm kiếm quyền Giáo viên (Teacher Layer)")
+    void test_TC_Q_15_Search_Teacher() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
-        
+
         Question q = Question.builder().questionId(1L).topic(topic).build();
         Page<Question> page = new PageImpl<>(List.of(q));
-        
+
         when(questionRepository.searchQuestions(any(), any(), any(), any(), eq(1L), any(), any())).thenReturn(page);
-        
+
         ResponseListData<QuestionSearchResponse> res = questionService.searchQuestions(req);
         assertThat(res.getContent()).hasSize(1);
         verify(questionRepository).searchQuestions(any(), any(), any(), any(), eq(1L), any(), any());
     }
 
     @Test
-    @DisplayName("TC_QLT_16: Tìm kiếm qua Bộ Lọc Đa Luồng (Filters)")
-    void test_TC_QLT_16_Search_Teacher_MultiFilter() {
+    @DisplayName("TC_Q_16: Tìm kiếm qua Bộ Lọc Đa Luồng (Filters)")
+    void test_TC_Q_16_Search_Teacher_MultiFilter() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
         req.getFilters().setType(QuestionType.MULTI_CHOICE);
         req.getFilters().setDifficultyLevel(3);
-        
+
         Page<Question> page = new PageImpl<>(new ArrayList<>());
         when(questionRepository.searchQuestions(
-            eq(QuestionType.MULTI_CHOICE), eq(3), any(), any(), eq(1L), any(), any()
+                eq(QuestionType.MULTI_CHOICE), eq(3), any(), any(), eq(1L), any(), any()
         )).thenReturn(page);
-        
+
         questionService.searchQuestions(req);
-        
+
         verify(questionRepository).searchQuestions(
-             eq(QuestionType.MULTI_CHOICE), eq(3), any(), any(), eq(1L), any(), any()
+                eq(QuestionType.MULTI_CHOICE), eq(3), any(), any(), eq(1L), any(), any()
         );
     }
 
@@ -357,11 +365,11 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_QLT_17: Cập nhật thông tin cơ bản thành công")
-    void test_TC_QLT_17_Update_Success() {
+    @DisplayName("TC_Q_17: Cập nhật thông tin cơ bản thành công")
+    void test_TC_Q_17_Update_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).content("Old").createdBy(1L).build();
-        
+
         when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
         when(questionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
@@ -369,7 +377,7 @@ class QuestionServiceImplTest {
         QuestionUpdateRequest req = new QuestionUpdateRequest();
         req.setContent("New");
         req.setDifficultyLevel(5);
-        
+
         QuestionDetailResponse res = questionService.updateQuestion(100L, req);
         assertThat(res.getContent()).isEqualTo("New");
         assertThat(res.getDifficultyLevel()).isEqualTo(5);
@@ -377,45 +385,45 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_18: Cập nhật linh hoạt một phần (Partial Update)")
-    void test_TC_QLT_18_Update_Success_Partial() {
+    @DisplayName("TC_Q_18: Cập nhật linh hoạt một phần (Partial Update)")
+    void test_TC_Q_18_Update_Success_Partial() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).content("Keep Me").createdBy(1L).build();
-        
+
         when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
         when(questionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
 
         QuestionUpdateRequest req = new QuestionUpdateRequest();
-        req.setImageUrl("new.png"); 
-        
+        req.setImageUrl("new.png");
+
         QuestionDetailResponse res = questionService.updateQuestion(100L, req);
         assertThat(res.getContent()).isEqualTo("Keep Me");
         assertThat(res.getImageUrl()).isEqualTo("new.png");
     }
 
     @Test
-    @DisplayName("TC_QLT_19: API không xâm phạm sửa chữa đáp án")
-    void test_TC_QLT_19_Update_DoesNotModifyAnswers() {
+    @DisplayName("TC_Q_19: API không xâm phạm sửa chữa đáp án")
+    void test_TC_Q_19_Update_DoesNotModifyAnswers() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).build();
-        
+
         when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
         when(questionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
 
         QuestionUpdateRequest req = new QuestionUpdateRequest();
         questionService.updateQuestion(100L, req);
-        
+
         verify(answerRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("TC_QLT_20: Tự động gỡ cờ duyệt 'Bài Ôn Tập'")
-    void test_TC_QLT_20_Update_ResetsReviewStatus() {
+    @DisplayName("TC_Q_20: Tự động gỡ cờ duyệt 'Bài Ôn Tập'")
+    void test_TC_Q_20_Update_ResetsReviewStatus() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).isReviewQuestion(true).build(); // TRUE
-        
+
         when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
         when(questionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
@@ -423,39 +431,39 @@ class QuestionServiceImplTest {
         QuestionUpdateRequest req = new QuestionUpdateRequest();
         req.setContent("Change");
         questionService.updateQuestion(100L, req);
-        
+
         assertThat(q.getIsReviewQuestion()).isFalse(); // RESET TO FALSE
     }
 
     @Test
-    @DisplayName("TC_QLT_21: Bẫy Bảo mật - Người dùng sai Role thao tác")
-    void test_TC_QLT_21_Update_Fail_NotTeacher() {
+    @DisplayName("TC_Q_21: Bẫy Bảo mật - Người dùng sai Role thao tác")
+    void test_TC_Q_21_Update_Fail_NotTeacher() {
         when(authService.getCurrentUser()).thenReturn(studentUser);
-        
+
         assertThatThrownBy(() -> questionService.updateQuestion(100L, new QuestionUpdateRequest()))
-            .isInstanceOf(AppException.class)
-            .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.UNAUTHORIZED));
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.UNAUTHORIZED));
     }
 
     @Test
-    @DisplayName("TC_QLT_22: Bẫy IDOR - Sửa chéo câu hỏi")
-    void test_TC_QLT_22_Update_Fail_NotOwner() {
+    @DisplayName("TC_Q_22: Bẫy IDOR - Sửa chéo câu hỏi")
+    void test_TC_Q_22_Update_Fail_NotOwner() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         // Returns empty meaning the question doesn't belong to them or is deleted
         when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not Found");
 
         assertThatThrownBy(() -> questionService.updateQuestion(100L, new QuestionUpdateRequest()))
-            .isInstanceOf(AppException.class)
-            .hasMessage("Not Found");
+                .isInstanceOf(AppException.class)
+                .hasMessage("Not Found");
     }
 
     @Test
-    @DisplayName("TC_QLT_23: Xóa mềm (Soft Delete) thành công")
-    void test_TC_QLT_23_SoftDelete_Success() {
+    @DisplayName("TC_Q_23: Xóa mềm (Soft Delete) thành công")
+    void test_TC_Q_23_SoftDelete_Success() {
         Question q = Question.builder().questionId(100L).isDeleted(false).build();
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
-        
+
         questionService.softDeleteQuestion(100L);
         assertThat(q.getIsDeleted()).isTrue();
         verify(questionRepository).save(q);
@@ -510,7 +518,7 @@ class QuestionServiceImplTest {
 
             wb.write(out);
             MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
-            
+
             when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
 
             QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
@@ -524,13 +532,13 @@ class QuestionServiceImplTest {
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet("Import");
             sheet.createRow(1); // Empty row
-            
+
             Row row = sheet.createRow(2);
             row.createCell(1).setCellValue(10L);
             row.createCell(2).setCellValue(1);
             row.createCell(3).setCellValue("Q");
             row.createCell(4).setCellValue("A");
-            row.createCell(8).setCellValue(1); 
+            row.createCell(8).setCellValue(1);
 
             wb.write(out);
             MockMultipartFile file = new MockMultipartFile("file", "test", null, out.toByteArray());
@@ -551,7 +559,7 @@ class QuestionServiceImplTest {
             row.createCell(2).setCellValue(1);
             row.createCell(3).setCellValue("Q");
             row.createCell(4).setCellValue("A");
-            row.createCell(8).setCellValue(1); 
+            row.createCell(8).setCellValue(1);
 
             wb.write(out);
             MockMultipartFile file = new MockMultipartFile("file", "test", null, out.toByteArray());
@@ -579,7 +587,7 @@ class QuestionServiceImplTest {
             when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
 
             QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
-            assertThat(res.getQuestions()).hasSize(1); 
+            assertThat(res.getQuestions()).hasSize(1);
             assertThat(res.getQuestions().get(0).getDifficultyLevel()).isEqualTo(5);
         }
     }
@@ -601,8 +609,8 @@ class QuestionServiceImplTest {
             when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
 
             assertThatThrownBy(() -> questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest()))
-                .isInstanceOf(AppException.class)
-                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                    .isInstanceOf(AppException.class)
+                    .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
         }
     }
 
@@ -622,35 +630,35 @@ class QuestionServiceImplTest {
             MockMultipartFile file = new MockMultipartFile("file", "test", null, out.toByteArray());
 
             assertThatThrownBy(() -> questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest()))
-                .isInstanceOf(AppException.class)
-                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
+                    .isInstanceOf(AppException.class)
+                    .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.INVALID_LOGIC_QUESTION));
         }
     }
 
     @Test
-    @DisplayName("TC_QLT_31: Export xuất chính xác số đo cột dư")
-    void test_TC_QLT_31_ExportExcel_Success() {
+    @DisplayName("TC_Q_31: Export xuất chính xác số đo cột dư")
+    void test_TC_Q_31_ExportExcel_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
-        
+
         Question q = Question.builder().questionId(100L).content("Q1").topic(topic).build();
         Page<Question> page = new PageImpl<>(List.of(q));
         when(questionRepository.searchQuestions(any(), any(), any(), any(), eq(1L), any(), any())).thenReturn(page);
-        
+
         Answer a1 = Answer.builder().content("A").build();
         Answer a2 = Answer.builder().content("B").build();
         when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(new ArrayList<>(List.of(a1, a2))); // max answers 2
-        
+
         byte[] excelBytes = questionService.exportQuestionsToExcel(new QuestionSearchRequest());
         assertThat(excelBytes).isNotEmpty();
     }
 
     @Test
-    @DisplayName("TC_QLT_32: Generate File Template khảm List Chủ Đề Động")
-    void test_TC_QLT_32_DownloadTemplate_Success() {
+    @DisplayName("TC_Q_32: Generate File Template khảm List Chủ Đề Động")
+    void test_TC_Q_32_DownloadTemplate_Success() {
         List<Object[]> topicsObj = new ArrayList<>();
         topicsObj.add(new Object[]{10L, "Topic1", "Subj1", "SUBJ01"});
         when(topicRepository.listTopicsWithSubject()).thenReturn(topicsObj);
-        
+
         byte[] bytes = questionService.downloadImportTemplate();
         assertThat(bytes).isNotEmpty();
     }
@@ -660,8 +668,8 @@ class QuestionServiceImplTest {
     // =========================================================================================
 
     @Test
-    @DisplayName("TC_QLT_33: Nhóm gửi thông điệp kiểm duyệt thành công")
-    void test_TC_QLT_33_CreateApprovalQuestion_Success() {
+    @DisplayName("TC_Q_33: Nhóm gửi thông điệp kiểm duyệt thành công")
+    void test_TC_Q_33_CreateApprovalQuestion_Success() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).isDeleted(false).build();
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
@@ -675,33 +683,448 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("TC_QLT_34: Ngăn chặn gửi đi câu hỏi Tàn Tích (Deleted)")
-    void test_TC_QLT_34_CreateApprovalQuestion_Fail_Deleted() {
+    @DisplayName("TC_Q_34: Ngăn chặn gửi đi câu hỏi Tàn Tích (Deleted)")
+    void test_TC_Q_34_CreateApprovalQuestion_Fail_Deleted() {
         when(authService.getCurrentUser()).thenReturn(teacherUser);
         Question q = Question.builder().questionId(100L).createdBy(1L).isDeleted(true).build(); // Deleted
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
 
         CreateApprovalQuestionRequest req = new CreateApprovalQuestionRequest();
         req.setQuestionIds(List.of(100L));
-        
+
         assertThatThrownBy(() -> questionService.createApprovalQuestion(req))
-            .isInstanceOf(AppException.class)
-            .hasMessageContaining("Question not found or deleted");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Question not found or deleted");
     }
 
     @Test
-    @DisplayName("TC_QLT_35: Ngăn chặn cướp luồng sở hữu (Cross-teacher IDOR)")
-    void test_TC_QLT_35_CreateApprovalQuestion_Fail_IDOR() {
+    @DisplayName("TC_Q_35: Ngăn chặn cướp luồng sở hữu (Cross-teacher IDOR)")
+    void test_TC_Q_35_CreateApprovalQuestion_Fail_IDOR() {
         when(authService.getCurrentUser()).thenReturn(teacherUser); // ID = 1
         Question q = Question.builder().questionId(100L).createdBy(99L).isDeleted(false).build(); // Belongs to user 99
         when(questionRepository.findById(100L)).thenReturn(Optional.of(q));
 
         CreateApprovalQuestionRequest req = new CreateApprovalQuestionRequest();
         req.setQuestionIds(List.of(100L));
-        
+
         assertThatThrownBy(() -> questionService.createApprovalQuestion(req))
-            .isInstanceOf(AppException.class)
-            .hasMessageContaining("You can only create approval request for your own questions");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("You can only create approval request for your own questions");
+    }
+
+    // =========================================================================================
+    // VI. SUPPLEMENTAL COVERAGE (100% METHOD & BRANCH)
+    // =========================================================================================
+
+    @Test
+    @DisplayName("TC_Q_36: Cập nhật thất bại khi isReviewQuestion là null")
+    void test_TC_Q_36_Update_IsReviewQuestionNull() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).createdBy(1L).isReviewQuestion(null).build();
+        when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
+        when(questionRepository.saveAndFlush(any())).thenReturn(q);
+
+        questionService.updateQuestion(100L, new QuestionUpdateRequest());
+        assertThat(q.getIsReviewQuestion()).isNull();
+    }
+
+    @Test
+    @DisplayName("TC_Q_37: Tìm kiếm với bộ lọc Filters là null")
+    void test_TC_Q_37_Search_FiltersNull() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        BaseFilterSearchRequest<QuestionSearchRequest> req = new BaseFilterSearchRequest<>();
+        req.setPagination(new SearchRequest());
+        req.setFilters(null);
+
+        Page<Question> page = new PageImpl<>(new ArrayList<>());
+        when(questionRepository.searchQuestionsForAdmin(any(), any(), any(), any(), any(), any())).thenReturn(page);
+
+        assertThatCode(() -> questionService.searchQuestions(req)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("TC_Q_38: Map chi tiết khi Type là null")
+    void test_TC_Q_38_GetDetail_NullType() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).topicId(10L).type(null).build();
+        when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
+
+        QuestionDetailResponse res = questionService.getQuestionDetail(100L);
+        assertThat(res.getType()).isNull();
+    }
+
+    @Test
+    @DisplayName("TC_Q_39: Export Excel gặp lỗi hệ thống (Catch block)")
+    void test_TC_Q_39_ExportExcel_Exception() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        when(questionRepository.searchQuestions(any(), any(), any(), any(), any(), any(), any()))
+                .thenThrow(new RuntimeException("DB Error"));
+
+        assertThatThrownBy(() -> questionService.exportQuestionsToExcel(new QuestionSearchRequest()))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_40: Import Excel - Bỏ qua dòng null (Row null)")
+    void test_TC_Q_40_ImportExcel_RowNull() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            sheet.createRow(1);
+            sheet.createRow(3);
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_41: Import Excel - Bắt lỗi AppException khi index > 4")
+    void test_TC_Q_41_ImportExcel_IndexOutOfBounds() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            Row row = sheet.createRow(1);
+            row.createCell(1).setCellValue(10L);
+            row.createCell(3).setCellValue("Q");
+            row.createCell(8).setCellValue(10);
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+
+            assertThatThrownBy(() -> questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest()))
+                    .isInstanceOf(AppException.class);
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_42: Import Excel - Ép kiểu Topic ID không thành công")
+    void test_TC_Q_42_ImportExcel_InvalidTopicIdString() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            Row row = sheet.createRow(1);
+            row.createCell(1).setCellValue("INVALID_ID");
+            row.createCell(3).setCellValue("Q");
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_43: Download Template gặp lỗi hệ thống (Catch block)")
+    void test_TC_Q_43_DownloadTemplate_Exception() {
+        when(topicRepository.listTopicsWithSubject()).thenThrow(new RuntimeException("IO Error"));
+        assertThatThrownBy(() -> questionService.downloadImportTemplate())
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_44: Cập nhật câu hỏi - Topic không tồn tại (Branch coverage)")
+    void test_TC_Q_44_UpdateQuestion_TopicNotFound() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).createdBy(1L).build();
+        when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
+        when(questionRepository.saveAndFlush(any())).thenReturn(q); // Cần dùng saveAndFlush
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
+
+        QuestionUpdateRequest req = new QuestionUpdateRequest();
+        req.setTopicId(999L);
+
+        questionService.updateQuestion(100L, req);
+        verify(questionRepository).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("TC_Q_45: Admin tạo yêu cầu duyệt (Unauthorized)")
+    void test_TC_Q_45_CreateApproval_Admin_Fail() {
+        when(authService.getCurrentUser()).thenReturn(adminUser);
+        assertThatThrownBy(() -> questionService.createApprovalQuestion(new CreateApprovalQuestionRequest()))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_46: Get Detail - Topic Null mapping check (NPE branch)")
+    void test_TC_Q_46_GetDetail_TopicNotFound_Mapping() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).topicId(999L).build();
+        when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
+        assertThatThrownBy(() -> questionService.getQuestionDetail(100L)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_47: Import Excel - Ô đáp án đúng bị trống")
+    void test_TC_Q_47_ImportExcel_CorrectAnswerCellNull() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            Row row = sheet.createRow(1);
+            row.createCell(1).setCellValue(10L);
+            row.createCell(3).setCellValue("Q");
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_48: Get Detail - Đáp án có IsCorrect là null")
+    void test_TC_Q_48_GetDetail_AnswerCorrectNull() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).topicId(10L).build();
+        when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
+
+        Answer a1 = Answer.builder().isCorrect(null).build();
+        when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(List.of(a1));
+
+        QuestionDetailResponse res = questionService.getQuestionDetail(100L);
+        assertThat(res.getAnswers().get(0).getIsCorrect()).isNull();
+    }
+
+    @Test
+    @DisplayName("TC_Q_49: Tạo hàng loạt với danh sách trống (AppException)")
+    void test_TC_Q_49_BulkCreate_EmptyList() {
+        assertThatThrownBy(() -> questionService.createQuestions(new ArrayList<>()))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_50: Xóa mềm câu hỏi không tồn tại (Lưu không lỗi)")
+    void test_TC_Q_50_SoftDelete_NotFound() {
+        when(questionRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThatCode(() -> questionService.softDeleteQuestion(999L)).doesNotThrowAnyException();
+        verify(questionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("TC_Q_51: Import Excel - Đọc giá trị số thập phân (Branch coverage)")
+    void test_TC_Q_51_ImportExcel_DecimalValue() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            Row row = sheet.createRow(1);
+            row.createCell(1).setCellValue(10L);
+            row.createCell(2).setCellValue(1.5); // Decimal difficulty
+            row.createCell(3).setCellValue("Q");
+            row.createCell(4).setCellValue("Ans 1"); // Cần nội dung cho đáp án đúng
+            row.createCell(8).setCellValue(1);
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
+
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).hasSize(1);
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_52: Import Excel - Topic ID kiểu Boolean (Else branch)")
+    void test_TC_Q_52_ImportExcel_BooleanCell() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            Row row = sheet.createRow(1);
+            row.createCell(1).setCellValue(true); // Boolean cell
+            row.createCell(3).setCellValue("Q");
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_53: Export Excel - Câu hỏi không có đáp án (maxAnswers=0)")
+    void test_TC_Q_53_ExportExcel_NoAnswers() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).topic(topic).build();
+        when(questionRepository.searchQuestions(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(q)));
+        when(answerRepository.findByQuestionIdOrderByDisplayOrder(100L)).thenReturn(new ArrayList<>());
+
+        byte[] bytes = questionService.exportQuestionsToExcel(new QuestionSearchRequest());
+        assertThat(bytes).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("TC_Q_54: Tạo câu hỏi - Đáp án có IsCorrect là null")
+    void test_TC_Q_54_CreateQuestion_AnswerCorrectNull() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
+
+        QuestionCreateRequest req = new QuestionCreateRequest();
+        req.setTopicId(10L);
+        req.setType(QuestionType.SINGLE_CHOICE);
+        AnswerCreateRequest ans = createAnsReq("A", true);
+        ans.setIsCorrect(null);
+        req.setAnswers(List.of(ans, createAnsReq("B", true)));
+
+        when(questionRepository.saveAndFlush(any())).thenReturn(Question.builder().questionId(100L).topicId(10L).build());
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(topic);
+
+        questionService.createQuestion(req);
+        verify(answerRepository, times(2)).save(any());
+    }
+
+    @Test
+    @DisplayName("TC_Q_55: Cập nhật toàn diện tất cả các trường (Full Field Update)")
+    void test_TC_Q_55_Update_AllFields() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).createdBy(1L).isReviewQuestion(true).build();
+        when(questionRepository.findByQuestionIdAndCreatedByAndIsDeletedFalse(100L, 1L)).thenReturn(Optional.of(q));
+        when(questionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(any())).thenReturn(topic);
+
+        QuestionUpdateRequest req = new QuestionUpdateRequest();
+        req.setContent("Updated Content");
+        req.setImageUrl("http://img.png");
+        req.setType(QuestionType.MULTI_CHOICE);
+        req.setDifficultyLevel(4);
+        req.setTopicId(20L);
+
+        QuestionDetailResponse res = questionService.updateQuestion(100L, req);
+        assertThat(res.getContent()).isEqualTo("Updated Content");
+        assertThat(res.getImageUrl()).isEqualTo("http://img.png");
+        assertThat(res.getType()).isEqualTo("MULTI_CHOICE");
+        assertThat(res.getDifficultyLevel()).isEqualTo(4);
+        assertThat(q.getIsReviewQuestion()).isFalse();
+    }
+
+    @Test
+    @DisplayName("TC_Q_56: Tìm kiếm với tổ hợp tất cả bộ lọc (Complex Search)")
+    void test_TC_Q_56_Search_AllFilters() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        BaseFilterSearchRequest<QuestionSearchRequest> req = createSearchReq();
+        QuestionSearchRequest f = req.getFilters();
+        f.setType(QuestionType.SINGLE_CHOICE);
+        f.setDifficultyLevel(2);
+        f.setTopicId(10L);
+        f.setSubjectId(5L);
+        f.setContent("Search Me");
+
+        Page<Question> page = new PageImpl<>(List.of(Question.builder().questionId(1L).topic(topic).build()));
+        when(questionRepository.searchQuestions(eq(QuestionType.SINGLE_CHOICE), eq(2), eq(10L), eq(5L), eq(1L), eq("Search Me"), any()))
+                .thenReturn(page);
+
+        ResponseListData<QuestionSearchResponse> res = questionService.searchQuestions(req);
+        assertThat(res.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("TC_Q_57: Admin không được quyền sửa câu hỏi (Security Branch)")
+    void test_TC_Q_57_Update_Admin_Forbidden() {
+        when(authService.getCurrentUser()).thenReturn(adminUser); // ADMIN
+        assertThatThrownBy(() -> questionService.updateQuestion(100L, new QuestionUpdateRequest()))
+                .isInstanceOf(AppException.class)
+                .matches(ex -> ((AppException) ex).getCode().equals(AppConst.MessageConst.UNAUTHORIZED));
+    }
+
+    @Test
+    @DisplayName("TC_Q_58: Import Excel - Chỉ định đáp án đúng ở biên (1 và 4)")
+    void test_TC_Q_58_ImportExcel_BoundaryCorrectIndex() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            // Row 1: Index 1
+            Row r1 = sheet.createRow(1);
+            r1.createCell(1).setCellValue(10L); r1.createCell(3).setCellValue("Q1");
+            r1.createCell(4).setCellValue("A1"); r1.createCell(8).setCellValue(1);
+            // Row 2: Index 4
+            Row r2 = sheet.createRow(2);
+            r2.createCell(1).setCellValue(10L); r2.createCell(3).setCellValue("Q2");
+            r2.createCell(7).setCellValue("A4"); r2.createCell(8).setCellValue(4);
+
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
+
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).hasSize(2);
+            assertThat(res.getQuestions().get(0).getAnswers().get(0).getIsCorrect()).isTrue();
+            assertThat(res.getQuestions().get(1).getAnswers().get(0).getIsCorrect()).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_59: Tạo hàng loạt - Một phần tử có danh sách đáp án null")
+    void test_TC_Q_59_BulkCreate_NullAnswersItem() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
+
+        QuestionBulkCreateItemRequest item = new QuestionBulkCreateItemRequest();
+        item.setTopicId(10L);
+        item.setAnswers(null);
+
+        assertThatThrownBy(() -> questionService.createQuestions(List.of(item)))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_60: Get Detail - Kiểm tra an toàn khi Topic bị xóa giữa chừng")
+    void test_TC_Q_60_GetDetail_TopicNull_NPE() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        Question q = Question.builder().questionId(100L).topicId(10L).build();
+        when(questionRepository.findByQuestionIdAndIsDeletedFalse(100L)).thenReturn(Optional.of(q));
+        when(topicRepository.findByTopicIdAndIsDeletedFalse(10L)).thenReturn(null);
+
+        assertThatThrownBy(() -> questionService.getQuestionDetail(100L))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_61: Tạo câu hỏi với danh sách đáp án null (AppException)")
+    void test_TC_Q_61_CreateQuestion_NullAnswers() {
+        when(authService.getCurrentUser()).thenReturn(teacherUser);
+        when(topicRepository.findByTopicIdAndIsActiveTrueAndIsDeletedFalse(10L)).thenReturn(Optional.of(topic));
+
+        QuestionCreateRequest req = new QuestionCreateRequest();
+        req.setTopicId(10L);
+        req.setAnswers(null); // NULL ANSWERS
+
+        assertThatThrownBy(() -> questionService.createQuestion(req))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_62: Import Excel - Bỏ qua ô trống (Blank Cell)")
+    void test_TC_Q_62_ImportExcel_BlankCell() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("Import");
+            Row row = sheet.createRow(1);
+            row.createCell(1).setCellValue(10L);
+            row.createCell(3).setBlank(); // BLANK CELL
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+            QuestionBulkCreateRequest res = questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest());
+            assertThat(res.getQuestions()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_63: Import Excel - File null dẫn đến lỗi hệ thống")
+    void test_TC_Q_63_ImportExcel_FileNull() {
+        assertThatThrownBy(() -> questionService.importQuestionsFromExcel(null, new QuestionImportExcelRequest()))
+                .isInstanceOf(AppException.class);
+    }
+
+    @Test
+    @DisplayName("TC_Q_64: Import Excel - Sheet null dẫn đến NPE (Nâng cao coverage)")
+    void test_TC_Q_64_ImportExcel_SheetNull() throws IOException {
+        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            // Only 1 sheet, but named incorrectly
+            wb.createSheet("Not Import");
+            wb.write(out);
+            MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", null, out.toByteArray());
+
+            assertThatThrownBy(() -> questionService.importQuestionsFromExcel(file, new QuestionImportExcelRequest()))
+                    .isInstanceOf(AppException.class);
+        }
+    }
+
+    @Test
+    @DisplayName("TC_Q_65: Tạo hàng loạt với danh sách requests là null")
+    void test_TC_Q_65_BulkCreate_NullList() {
+        assertThatThrownBy(() -> questionService.createQuestions(null))
+                .isInstanceOf(AppException.class);
     }
 
     // ===================== HELPER METHODS =====================
@@ -711,7 +1134,7 @@ class QuestionServiceImplTest {
         r.setIsCorrect(correct);
         return r;
     }
-    
+
     private QuestionBulkAnswerCreateRequest createBulkAnsReq(String content, boolean correct) {
         QuestionBulkAnswerCreateRequest r = new QuestionBulkAnswerCreateRequest();
         r.setContent(content);
