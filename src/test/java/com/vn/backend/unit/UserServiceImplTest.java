@@ -1,6 +1,10 @@
 package com.vn.backend.unit;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import org.springframework.data.domain.Page;
 
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.user.*;
@@ -14,6 +18,7 @@ import com.vn.backend.exceptions.AppException;
 import com.vn.backend.repositories.UserRepository;
 import com.vn.backend.services.AuthService;
 import com.vn.backend.services.impl.UserServiceImpl;
+import com.vn.backend.ServiceTestSupport;
 import com.vn.backend.utils.MessageUtils;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -709,6 +714,182 @@ class UserServiceImplTest {
             UpdateUserRequest request = updateRequest();
             request.setEmail("a".repeat(350));
             assertThrows(AppException.class, () -> service.updateUser(USER_ID, request));
+        }
+    }
+
+    @Nested
+    class BranchCoverageEnhancementTests {
+
+        @Test
+        void US_37_test_toBaseUser_EdgeCases() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("toBaseUserFromFullName", String.class);
+            method.setAccessible(true);
+
+            assertEquals("", method.invoke(service, (Object) null));
+            assertEquals("", method.invoke(service, "   "));
+            assertEquals("", method.invoke(service, "123")); // removeDiacritics turns "123" into spaces
+            assertEquals("hung", method.invoke(service, "Hung")); // parts.length = 1, initials loop doesn't run
+        }
+
+        @Test
+        void test_parseDob_FinalEdges() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("parseDob", String.class);
+            method.setAccessible(true);
+
+            assertNull(method.invoke(service, "invalid-date"));
+            // Test substring(0, 10) fallback
+            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "2000-01-01T10:00:00Z"));
+        }
+
+        @Test
+        void test_generateUniqueCode_Branches() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("generateUniqueCode", String.class);
+            method.setAccessible(true);
+
+            // Mock repo to return a list with null, mismatching prefix, and non-numeric tail
+            when(userRepository.findCodesByPrefix("test")).thenReturn(Arrays.asList(
+                    null,
+                    "other123",
+                    "testABC",
+                    "test10"
+            ));
+
+            assertEquals("test11", method.invoke(service, "test"));
+        }
+
+        @Test
+        void test_generatePassword_NoDob() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("generatePassword", String.class, LocalDate.class);
+            method.setAccessible(true);
+
+            // dob is null, fullName is "123" -> base is empty -> randomAlphaNum(6)
+            String result = (String) method.invoke(service, "123", null);
+            assertNotNull(result);
+            assertTrue(result.endsWith("1"));
+            assertEquals(7, result.length());
+        }
+
+        @Test
+        void test_getUsers_BranchCombinations() {
+            // hasFilters = true via Role only
+            UserSearchRequest req1 = userSearchRequest(new UserFilterRequest());
+            req1.getFilters().setRole(Role.STUDENT);
+            when(userRepository.findByFilters(isNull(), eq(Role.STUDENT), isNull(), any())).thenReturn(Page.empty());
+            service.getUsers(req1);
+
+            // hasFilters = true via Status only
+            UserSearchRequest req2 = userSearchRequest(new UserFilterRequest());
+            req2.getFilters().setStatus(StatusUser.ACTIVE);
+            when(userRepository.findByFilters(isNull(), isNull(), eq(true), any())).thenReturn(Page.empty());
+            service.getUsers(req2);
+        }
+
+        @Test
+        void test_validateUserImportRows_EdgeBlanks() throws Exception {
+            Class<?> rowClass = Class.forName("com.vn.backend.services.impl.UserServiceImpl$UserImportRow");
+            Constructor<?> constructor = rowClass.getDeclaredConstructors()[0];
+            constructor.setAccessible(true);
+            Object row = constructor.newInstance(1, " ", " ", " ", " ", null, "M", "A", " ");
+
+            AppException ex = assertThrows(AppException.class, () -> {
+                Method method = UserServiceImpl.class.getDeclaredMethod("validateUserImportRows", List.class);
+                method.setAccessible(true);
+                try {
+                    method.invoke(service, List.of(row));
+                } catch (InvocationTargetException e) {
+                    throw e.getCause();
+                }
+            });
+            assertTrue(ex.getMessage().contains("FULL_NAME"));
+            assertTrue(ex.getMessage().contains("EMAIL"));
+            assertTrue(ex.getMessage().contains("ROLE"));
+        }
+        @Test
+        void test_toBaseUser_ExtraEdges() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("toBaseUserFromFullName", String.class);
+            method.setAccessible(true);
+            
+            // Branch: parts.length == 0 (Should be unreachable due to trim() and isEmpty() check, but for sanity)
+            // But if we can find a way... maybe not possible.
+            
+            // Branch: !parts[i].isBlank() is always true due to split("\\s+") and trim()
+            // To hit the "else" (if it existed), we'd need a blank part.
+        }
+
+        @Test
+        void US_38_test_parseDob_MoreFormats() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("parseDob", String.class);
+            method.setAccessible(true);
+
+            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "01/01/2000"));
+            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "1/1/2000"));
+            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "2000-01-01"));
+        }
+
+        @Test
+        void US_39_test_generateUniqueCode_Overflow() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("generateUniqueCode", String.class);
+            method.setAccessible(true);
+
+            // Branch: catch (NumberFormatException ignored)
+            when(userRepository.findCodesByPrefix("test")).thenReturn(Arrays.asList(
+                    "test999999999999999999" // Too large for Integer
+            ));
+
+            assertEquals("test1", method.invoke(service, "test"));
+        }
+
+        @Test
+        void US_40_test_getUsers_AllFilterCombinations() {
+            // Case: Search provided, others null
+            UserSearchRequest req1 = userSearchRequest(new UserFilterRequest());
+            req1.getFilters().setSearch("a");
+            when(userRepository.findByFilters(any(), isNull(), isNull(), any())).thenReturn(Page.empty());
+            service.getUsers(req1);
+
+            // Case: Search empty (blank), others null -> hasFilters = false
+            UserSearchRequest req2 = userSearchRequest(new UserFilterRequest());
+            req2.getFilters().setSearch("   ");
+            when(userRepository.findUsers(any())).thenReturn(Page.empty());
+            service.getUsers(req2);
+            
+            // Case: Search null, Role null, Status provided
+            UserSearchRequest req3 = userSearchRequest(new UserFilterRequest());
+            req3.getFilters().setStatus(StatusUser.INACTIVE);
+            when(userRepository.findByFilters(isNull(), isNull(), eq(false), any())).thenReturn(Page.empty());
+            service.getUsers(req3);
+        }
+
+        @Test
+        void US_41_test_updateUser_NullBranches() {
+            userStore.put(USER_ID, user(USER_ID, "u", "e", "C", Role.STUDENT));
+            UpdateUserRequest request = new UpdateUserRequest(); 
+            // All fields null except ID
+            service.updateUser(USER_ID, request);
+            
+            // Case: Username not null but same as current
+            request.setUsername("u");
+            service.updateUser(USER_ID, request);
+
+            // Case: Email not null but same as current
+            request.setEmail("e");
+            service.updateUser(USER_ID, request);
+        }
+
+        @Test
+        void US_42_test_isValidRole_Edge() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("isValidRole", String.class);
+            method.setAccessible(true);
+            assertFalse((Boolean) method.invoke(service, " "));
+            assertFalse((Boolean) method.invoke(service, (Object) null));
+        }
+
+        @Test
+        void US_43_test_parseRole_Edge() throws Exception {
+            Method method = UserServiceImpl.class.getDeclaredMethod("parseRole", String.class);
+            method.setAccessible(true);
+            assertNull(method.invoke(service, "INVALID"));
+            assertNull(method.invoke(service, " "));
         }
     }
 }

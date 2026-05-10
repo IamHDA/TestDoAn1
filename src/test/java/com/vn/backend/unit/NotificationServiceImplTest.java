@@ -87,7 +87,7 @@ class NotificationServiceImplTest {
     // ===================== countUnreadNotification =====================
 
     @Test
-    @DisplayName("countUnreadNotification - trả về số lượng chính xác")
+    @DisplayName("NT_01 - countUnreadNotification: trả về số lượng chính xác")
     void countUnreadNotification_Success() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
         when(notificationRepository.countUnreadNotification(1L)).thenReturn(5L);
@@ -101,7 +101,7 @@ class NotificationServiceImplTest {
     // ===================== searchNotification =====================
 
     @Test
-    @DisplayName("searchNotification - trả về danh sách phân trang thành công")
+    @DisplayName("NT_02 - searchNotification: trả về danh sách phân trang thành công")
     void searchNotification_Success() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
 
@@ -142,7 +142,7 @@ class NotificationServiceImplTest {
     // ===================== updateIsReadNotification =====================
 
     @Test
-    @DisplayName("updateIsReadNotification - đánh dấu đã đọc thành công")
+    @DisplayName("NT_03 - updateIsReadNotification: đánh dấu đã đọc thành công")
     void updateIsReadNotification_Success() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
 
@@ -161,7 +161,7 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateIsReadNotification - ném exception khi notification không tồn tại")
+    @DisplayName("NT_04 - updateIsReadNotification: ném exception khi notification không tồn tại")
     void updateIsReadNotification_ThrowsException() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
         when(notificationRepository.findByNotificationIdAndReceiverId(10L, 1L))
@@ -175,7 +175,7 @@ class NotificationServiceImplTest {
     // ===================== readAllNotification =====================
 
     @Test
-    @DisplayName("readAllNotification - đánh dấu đọc toàn bộ")
+    @DisplayName("NT_05 - readAllNotification: đánh dấu đọc toàn bộ")
     void readAllNotification_Success() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
 
@@ -197,7 +197,7 @@ class NotificationServiceImplTest {
     // ===================== createNotificationForUser (Invitation) =====================
 
     @Test
-    @DisplayName("createNotificationForUser(Invitation) - gửi websocket thành công")
+    @DisplayName("NT_06 - createNotificationForUser(Invitation): gửi websocket thành công")
     void createNotificationForUser_Invitation_Success() {
         Invitation invitation = Invitation.builder()
                 .classroom(classroom)
@@ -215,7 +215,7 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    @DisplayName("createNotificationForUser(Invitation) - return sớm nếy input null")
+    @DisplayName("NT_07 - createNotificationForUser(Invitation): return sớm nếu input null")
     void createNotificationForUser_Invitation_Fail_NullInputs() {
         notificationService.createNotificationForUser(null, 2L, NotificationObjectType.INVITE_CLASS, 1L, new Invitation());
         verify(notificationRepository, never()).save(any());
@@ -224,7 +224,7 @@ class NotificationServiceImplTest {
     // ===================== createNotificationForUser (Classroom) =====================
 
     @Test
-    @DisplayName("createNotificationForUser(Classroom) - gửi thành công")
+    @DisplayName("NT_08 - createNotificationForUser(Classroom): gửi thành công")
     void createNotificationForUser_Classroom_Success() {
         when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> i.getArgument(0));
         notificationService.createNotificationForUser(
@@ -236,7 +236,7 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    @DisplayName("createNotificationForUser(Classroom) - return sớm nếu input null")
+    @DisplayName("NT_09 - createNotificationForUser(Classroom): return sớm nếu input null")
     void createNotificationForUser_Classroom_Fail_NullInputs() {
         notificationService.createNotificationForUser(currentUser, null, NotificationObjectType.JOIN_CLASS, 1L, classroom);
         verify(notificationRepository, never()).save(any());
@@ -245,7 +245,7 @@ class NotificationServiceImplTest {
     // ===================== createNotificationForUser (SessionExam) =====================
 
     @Test
-    @DisplayName("createNotificationForUser(SessionExam) - gửi thành công")
+    @DisplayName("NT_10 - createNotificationForUser(SessionExam): gửi thành công")
     void createNotificationForUser_SessionExam_Success() {
         SessionExam sessionExam = SessionExam.builder()
                 .title("Midterm Exam")
@@ -262,7 +262,7 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    @DisplayName("createNotificationForUser(SessionExam) - return sớm nếu input null")
+    @DisplayName("NT_11 - createNotificationForUser(SessionExam): return sớm nếu input null")
     void createNotificationForUser_SessionExam_Fail_NullInputs() {
         notificationService.createNotificationForUser(currentUser, 2L, null, 1L, new SessionExam());
         verify(notificationRepository, never()).save(any());
@@ -271,7 +271,7 @@ class NotificationServiceImplTest {
     // ===================== createNotificationForClass =====================
 
     @Test
-    @DisplayName("createNotificationForClass - gửi đến tất cả thành viên (trừ sender)")
+    @DisplayName("NT_12 - createNotificationForClass: gửi đến tất cả thành viên (trừ sender)")
     void createNotificationForClass_Success() {
         when(classroomRepository.findById(100L)).thenReturn(Optional.of(classroom));
 
@@ -295,14 +295,14 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    @DisplayName("createNotificationForClass - return sớm nếu input null")
+    @DisplayName("NT_13 - createNotificationForClass: return sớm nếu input null")
     void createNotificationForClass_Fail_NullInputs() {
         notificationService.createNotificationForClass(null, 100L, NotificationObjectType.ANNOUNCEMENT, 1L);
         verify(notificationRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("createNotificationForClass - ném exception khi không thấy lớp")
+    @DisplayName("NT_14 - createNotificationForClass: ném exception khi không thấy lớp")
     void createNotificationForClass_ThrowsException_WhenNotFound() {
         when(classroomRepository.findById(100L)).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not found");
@@ -312,7 +312,7 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    @DisplayName("Priority Logic - bao phủ nhánh HIGH, MEDIUM, LOW")
+    @DisplayName("NT_15 - Priority Logic: bao phủ nhánh HIGH, MEDIUM, LOW")
     void test_PriorityLogic() throws Exception {
         // Sử dụng reflection để gọi private method getPriorityByNotificationType
         java.lang.reflect.Method method = NotificationServiceImpl.class.getDeclaredMethod("getPriorityByNotificationType", NotificationObjectType.class);
@@ -330,5 +330,76 @@ class NotificationServiceImplTest {
         
         // LOW (default)
         assertThat(method.invoke(notificationService, NotificationObjectType.SYSTEM_NOTIFICATION)).isEqualTo(com.vn.backend.enums.NotificationPriority.LOW);
+    }
+
+    // ===================== Branch Coverage Enhancement =====================
+
+    @Test
+    @DisplayName("NT_16 - createNotificationForUser(Invitation): bao phủ tổ hợp null")
+    void createNotificationForUser_Invitation_AllNullBranches() {
+        Invitation inv = new Invitation();
+        // Test each null field to cover || branches
+        notificationService.createNotificationForUser(currentUser, null, NotificationObjectType.INVITE_CLASS, 1L, inv);
+        notificationService.createNotificationForUser(currentUser, 2L, null, 1L, inv);
+        notificationService.createNotificationForUser(currentUser, 2L, NotificationObjectType.INVITE_CLASS, null, inv);
+        
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("NT_17 - createNotificationForUser(Classroom): bao phủ tổ hợp null")
+    void createNotificationForUser_Classroom_AllNullBranches() {
+        notificationService.createNotificationForUser(null, 2L, NotificationObjectType.JOIN_CLASS, 1L, classroom);
+        notificationService.createNotificationForUser(currentUser, null, NotificationObjectType.JOIN_CLASS, 1L, classroom);
+        notificationService.createNotificationForUser(currentUser, 2L, null, 1L, classroom);
+        notificationService.createNotificationForUser(currentUser, 2L, NotificationObjectType.JOIN_CLASS, null, classroom);
+        
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("NT_18 - createNotificationForUser(SessionExam): bao phủ tổ hợp null")
+    void createNotificationForUser_SessionExam_AllNullBranches() {
+        SessionExam se = new SessionExam();
+        notificationService.createNotificationForUser(null, 2L, NotificationObjectType.EXAM_CREATED, 1L, se);
+        notificationService.createNotificationForUser(currentUser, null, NotificationObjectType.EXAM_CREATED, 1L, se);
+        notificationService.createNotificationForUser(currentUser, 2L, null, 1L, se);
+        notificationService.createNotificationForUser(currentUser, 2L, NotificationObjectType.EXAM_CREATED, null, se);
+        
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("NT_19 - createNotificationForClass: bao phủ tổ hợp null")
+    void createNotificationForClass_AllNullBranches() {
+        notificationService.createNotificationForClass(null, 100L, NotificationObjectType.ANNOUNCEMENT, 1L);
+        notificationService.createNotificationForClass(currentUser, null, NotificationObjectType.ANNOUNCEMENT, 1L);
+        notificationService.createNotificationForClass(currentUser, 100L, null, 1L);
+        notificationService.createNotificationForClass(currentUser, 100L, NotificationObjectType.ANNOUNCEMENT, null);
+        
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("NT_20 - createNotificationForClass: danh sách thành viên rỗng (trừ sender)")
+    void createNotificationForClass_EmptyMembers() {
+        when(classroomRepository.findById(100L)).thenReturn(Optional.of(classroom));
+        // Only sender is in the list
+        Set<Long> memberIds = new HashSet<>();
+        memberIds.add(currentUser.getId());
+        when(classMemberRepository.getClassMemberIdsActive(100L, null)).thenReturn(memberIds);
+        
+        // Teacher is 2L (different from sender 1L)
+        // Logic: adds teacher(2L), removes sender(1L). Result: {2L}
+        
+        notificationService.createNotificationForClass(currentUser, 100L, NotificationObjectType.ANNOUNCEMENT, 1L);
+        verify(notificationRepository, times(1)).save(any());
+    }
+    
+    @Test
+    @DisplayName("NT_21 - updateIsReadNotification: lỗi định dạng ID")
+    void updateIsReadNotification_InvalidIdFormat() {
+        assertThatThrownBy(() -> notificationService.updateIsReadNotification("abc"))
+            .isInstanceOf(NumberFormatException.class);
     }
 }
