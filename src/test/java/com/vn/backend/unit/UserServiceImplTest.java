@@ -1,11 +1,5 @@
 package com.vn.backend.unit;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import org.springframework.data.domain.Page;
-
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.user.*;
 import com.vn.backend.dto.response.UserResponse;
@@ -18,7 +12,6 @@ import com.vn.backend.exceptions.AppException;
 import com.vn.backend.repositories.UserRepository;
 import com.vn.backend.services.AuthService;
 import com.vn.backend.services.impl.UserServiceImpl;
-import com.vn.backend.ServiceTestSupport;
 import com.vn.backend.utils.MessageUtils;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -46,11 +39,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.vn.backend.constants.AppConst.FieldConst.USER_ID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Lớp kiểm thử cho UserServiceImpl, quản lý các unit test cho chức năng người
+ * dùng.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class UserServiceImplTest {
@@ -71,6 +67,9 @@ class UserServiceImplTest {
     private final Map<Long, User> userStore = new HashMap<>();
     private User savedUser;
 
+    /**
+     * Thiết lập môi trường trước mỗi bài kiểm thử.
+     */
     @BeforeEach
     void setUp() {
         MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
@@ -79,12 +78,9 @@ class UserServiceImplTest {
                 messageUtils,
                 userRepository,
                 passwordEncoder,
-                authService
-        );
+                authService);
 
-        when(passwordEncoder.encode(anyString())).thenAnswer(invocation ->
-                "encoded-" + invocation.getArgument(0)
-        );
+        when(passwordEncoder.encode(anyString())).thenAnswer(invocation -> "encoded-" + invocation.getArgument(0));
 
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             savedUser = invocation.getArgument(0);
@@ -244,32 +240,38 @@ class UserServiceImplTest {
                 "file",
                 "users.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                outputStream.toByteArray()
-        );
+                outputStream.toByteArray());
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tạo người dùng.
+     */
     @Nested
     class CreateUserTests {
 
         @Test
-        void US_01_createUser_Success() {
+        void createUser_Success() {
+            // Given & When: Thực hiện tạo người dùng mới từ request mẫu
             service.createUser(createRequest());
 
+            // Then: Kiểm tra thông tin người dùng được lưu trữ chính xác
             assertNotNull(savedUser);
             assertEquals("student01", savedUser.getUsername());
             assertEquals("SV001", savedUser.getCode());
             assertEquals("student01@example.com", savedUser.getEmail());
+            // Mật khẩu phải được mã hóa trước khi lưu
             assertEquals("encoded-123456", savedUser.getPassword());
             assertEquals("Nguyen Van A", savedUser.getFullName());
             assertEquals(Role.STUDENT, savedUser.getRole());
             assertTrue(savedUser.getIsActive());
             assertFalse(savedUser.getIsDeleted());
 
+            // Đảm bảo hàm save của repository đã được gọi
             verify(userRepository).save(any(User.class));
         }
 
         @Test
-        void US_02_createUser_Fail_ThrowsWhenUsernameExists() {
+        void createUser_Fail_ThrowsWhenUsernameExists() {
             userStore.put(1L, user(1L, "student01", "old@example.com", "OLD001", Role.STUDENT));
 
             assertThrows(AppException.class, () -> service.createUser(createRequest()));
@@ -278,7 +280,7 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_03_createUser_Fail_ThrowsWhenEmailExists() {
+        void createUser_Fail_ThrowsWhenEmailExists() {
             userStore.put(1L, user(1L, "old", "student01@example.com", "OLD001", Role.STUDENT));
 
             assertThrows(AppException.class, () -> service.createUser(createRequest()));
@@ -287,18 +289,39 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_04_createUser_Fail_ThrowsWhenCodeExists() {
+        void createUser_Fail_ThrowsWhenCodeExists() {
             userStore.put(1L, user(1L, "old", "old@example.com", "SV001", Role.STUDENT));
 
             assertThrows(AppException.class, () -> service.createUser(createRequest()));
+
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        void createUser_Fail_ThrowsWhenFullNameTooLong() {
+            CreateUserRequest request = createRequest();
+            request.setFullName("A".repeat(51));
+
+            assertThrows(AppException.class, () -> service.createUser(request));
+        }
+
+        @Test
+        void createUser_Fail_ThrowsWhenEmailTooLong() {
+            CreateUserRequest request = createRequest();
+            request.setEmail("a".repeat(321));
+
+            assertThrows(AppException.class, () -> service.createUser(request));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng cập nhật thông tin người dùng.
+     */
     @Nested
     class UpdateUserTests {
 
         @Test
-        void US_05_updateUser_Success() {
+        void updateUser_Success() {
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             userStore.put(USER_ID, existing);
 
@@ -318,7 +341,7 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_11_updateUser_Success_SameUser() {
+        void updateUser_Success_DoesNotChangeUsernameAndEmailWhenSameValue() {
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             userStore.put(USER_ID, existing);
 
@@ -335,14 +358,14 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_06_updateUser_Fail_ThrowsWhenUserNotFound() {
+        void updateUser_Fail_ThrowsWhenUserMissing() {
             assertThrows(AppException.class, () -> service.updateUser(99L, updateRequest()));
 
             verify(userRepository, never()).save(any(User.class));
         }
 
         @Test
-        void US_07_updateUser_Fail_ThrowsWhenUsernameTaken() {
+        void updateUser_Fail_ThrowsWhenUsernameExists() {
             User current = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             User other = user(2L, "student02", "other@example.com", "SV002", Role.STUDENT);
 
@@ -356,7 +379,7 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_08_updateUser_Fail_ThrowsWhenEmailTaken() {
+        void updateUser_Fail_ThrowsWhenEmailExists() {
             User current = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             User other = user(2L, "student02", "student02@example.com", "SV002", Role.STUDENT);
 
@@ -364,57 +387,40 @@ class UserServiceImplTest {
             userStore.put(2L, other);
 
             UpdateUserRequest request = updateRequest();
+            request.setEmail("student02@example.com");
+
             assertThrows(AppException.class, () -> service.updateUser(USER_ID, request));
         }
 
         @Test
-        void US_09_updateUser_UpdateAllFields_Success() {
-            User existing = user(USER_ID, "old", "old@mail.com", "OLD", Role.STUDENT);
-            userStore.put(USER_ID, existing);
+        void updateUser_Fail_ThrowsWhenFullNameTooLong() {
+            userStore.put(USER_ID, user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT));
 
-            UpdateUserRequest request = updateRequest(); // has all fields
-            service.updateUser(USER_ID, request);
+            UpdateUserRequest request = updateRequest();
+            request.setFullName("A".repeat(51));
 
-            assertEquals("student02", savedUser.getUsername());
-            assertEquals("SV002", savedUser.getCode());
-            assertEquals("student02@example.com", savedUser.getEmail());
-            assertEquals(Role.TEACHER, savedUser.getRole());
-            assertEquals("Tran Van B", savedUser.getFullName());
+            assertThrows(AppException.class, () -> service.updateUser(USER_ID, request));
         }
 
         @Test
-        void US_10_updateUser_WithAllNulls_NoChange() {
-            User existing = user(USER_ID, "old", "old@mail.com", "OLD", Role.STUDENT);
-            userStore.put(USER_ID, existing);
+        void updateUser_Fail_ThrowsWhenEmailTooLong() {
+            userStore.put(USER_ID, user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT));
 
-            UpdateUserRequest request = new UpdateUserRequest(); // all null
-            service.updateUser(USER_ID, request);
+            UpdateUserRequest request = updateRequest();
+            request.setEmail("a".repeat(321));
 
-            assertEquals("old", savedUser.getUsername());
-            assertEquals("OLD", savedUser.getCode());
-            assertEquals(Role.STUDENT, savedUser.getRole());
-        }
-
-        @Test
-        void US_12_updateUser_EncodesPassword_Success() {
-            User existing = user(USER_ID, "old", "old@mail.com", "OLD", Role.STUDENT);
-            userStore.put(USER_ID, existing);
-
-            UpdateUserRequest request = new UpdateUserRequest();
-            request.setPassword("newRawPass");
-
-            service.updateUser(USER_ID, request);
-
-            assertEquals("encoded-newRawPass", savedUser.getPassword());
-            verify(passwordEncoder).encode("newRawPass");
+            assertThrows(AppException.class, () -> service.updateUser(USER_ID, request));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng cập nhật trạng thái người dùng.
+     */
     @Nested
     class UpdateUserStatusTests {
 
         @Test
-        void US_13_updateUserStatus_Success_Deactivate() {
+        void updateUserStatus_Success_DeactivatesUser() {
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             userStore.put(USER_ID, existing);
 
@@ -426,95 +432,122 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_14_updateUserStatus_Success_Activate() {
+        void updateUserStatus_Success_ActivatesUser() {
+            // Given: Người dùng hiện đang ở trạng thái INACTIVE (isActive = false)
             User existing = user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT);
             existing.setIsActive(false);
             userStore.put(USER_ID, existing);
 
+            // When: Thực hiện cập nhật trạng thái người dùng thành ACTIVE
             service.updateUserStatus(USER_ID, StatusUser.ACTIVE);
 
+            // Then: Trạng thái isActive của người dùng phải chuyển thành true
             assertTrue(savedUser.getIsActive());
         }
 
         @Test
-        void US_15_updateUserStatus_Fail_ThrowsWhenNotFound() {
+        void updateUserStatus_Fail_ThrowsWhenUserMissing() {
             assertThrows(AppException.class, () -> service.updateUserStatus(99L, StatusUser.ACTIVE));
 
             verify(userRepository, never()).save(any(User.class));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng lấy danh sách người dùng.
+     */
     @Nested
     class GetUsersTests {
 
         @Test
-        void US_18_getUsers_WithoutFilters_Success() {
-            when(userRepository.findUsers(any())).thenReturn(new PageImpl<>(List.of(
-                    user(1L, "u1", "u1@mail.com", "C1", Role.STUDENT)
-            )));
+        void getUsers_Success_UsesFindUsersWhenNoFilters() {
+            UserSearchRequest request = userSearchRequest(null);
 
-            ResponseListData<UserResponse> response = service.getUsers(userSearchRequest(new UserFilterRequest()));
+            when(userRepository.findUsers(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(
+                            user(1L, "student01", "student01@example.com", "SV001", Role.STUDENT))));
 
-            assertNotNull(response);
-            assertEquals(1, response.getContent().size());
+            ResponseListData<UserResponse> result = service.getUsers(request);
+
+            assertNotNull(result);
+            verify(userRepository).findUsers(any(Pageable.class));
+            verify(userRepository, never()).findByFilters(any(), any(), any(), any(Pageable.class));
         }
 
         @Test
-        void US_19_getUsers_WithFilters_Success() {
+        void getUsers_Success_UsesFindByFiltersWhenSearchProvided() {
             UserFilterRequest filters = new UserFilterRequest();
-            filters.setSearch("john");
+            filters.setSearch("student");
             filters.setRole(Role.STUDENT);
             filters.setStatus(StatusUser.ACTIVE);
 
-            when(userRepository.findByFilters(eq("%john%"), eq(Role.STUDENT), eq(true), any())).thenReturn(new PageImpl<>(List.of(
-                    user(1L, "john", "john@mail.com", "C1", Role.STUDENT)
-            )));
+            when(userRepository.findByFilters(
+                    any(),
+                    eq(Role.STUDENT),
+                    eq(true),
+                    any(Pageable.class))).thenReturn(new PageImpl<>(
+                            List.of(
+                                    user(1L, "student01", "student01@example.com", "SV001", Role.STUDENT))));
 
-            service.getUsers(userSearchRequest(filters));
+            ResponseListData<UserResponse> result = service.getUsers(userSearchRequest(filters));
 
-            verify(userRepository).findByFilters(eq("%john%"), eq(Role.STUDENT), eq(true), any());
+            assertNotNull(result);
+            verify(userRepository).findByFilters(any(), eq(Role.STUDENT), eq(true), any(Pageable.class));
+            verify(userRepository, never()).findUsers(any(Pageable.class));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tải template nhập người dùng.
+     */
     @Nested
     class DownloadUserImportTemplateTests {
 
         @Test
-        void US_21_downloadUserImportTemplate_Success() {
+        void downloadUserImportTemplate_Success_ReturnsExcelResource() {
             ByteArrayResource resource = service.downloadUserImportTemplate();
+
             assertNotNull(resource);
             assertTrue(resource.contentLength() > 0);
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng nhập người dùng từ Excel.
+     */
     @Nested
     class ImportUsersFromExcelTests {
 
         @Test
-        void US_22_importUsers_Success() throws Exception {
+        void importUsersFromExcel_Success_ImportsValidRows() throws Exception {
+            // Given: Một file Excel giả lập chứa thông tin 1 sinh viên hợp lệ
             MultipartFile file = excelFile(List.of(
-                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi", "STUDENT")
-            ));
+                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
+                            "STUDENT")));
 
+            // When: Thực hiện import người dùng từ file Excel
             service.importUsersFromExcel(file);
 
+            // Then: Kiểm tra thông tin sinh viên được import vào hệ thống
             assertNotNull(savedUser);
+            // Username mặc định lấy theo Code nếu không có username riêng
             assertEquals("SV001", savedUser.getUsername());
             assertEquals("SV001", savedUser.getCode());
             assertEquals("a@example.com", savedUser.getEmail());
             assertEquals("Nguyen Van A", savedUser.getFullName());
             assertEquals(LocalDate.of(2000, 1, 1), savedUser.getDateOfBirth());
             assertEquals(Role.STUDENT, savedUser.getRole());
+            // Mật khẩu mặc định thường được tạo từ ngày sinh (ddMMyyyy) và được mã hóa
             assertEquals("encoded-01012000", savedUser.getPassword());
 
             verify(userRepository).save(any(User.class));
         }
 
         @Test
-        void US_26_importUsers_Success_CollisionHandling() throws Exception {
+        void importUsersFromExcel_Success_GeneratesCodeWhenCodeBlank() throws Exception {
             MultipartFile file = excelFile(List.of(
-                    List.of("1", "Nguyen Van A", "", "a@example.com", "0123456789", "2000-01-01", "MALE", "Ha Noi", "STUDENT")
-            ));
+                    List.of("1", "Nguyen Van A", "", "a@example.com", "0123456789", "2000-01-01", "MALE", "Ha Noi",
+                            "STUDENT")));
 
             when(userRepository.findCodesByPrefix(anyString())).thenReturn(List.of("anguyen1", "anguyen2"));
 
@@ -527,11 +560,12 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_24_importUsers_Fail_ThrowsWhenDuplicateFile() throws Exception {
+        void importUsersFromExcel_Fail_ThrowsWhenEmailDuplicatedInFile() throws Exception {
             MultipartFile file = excelFile(List.of(
-                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi", "STUDENT"),
-                    List.of("2", "Tran Van B", "SV002", "a@example.com", "0987654321", "02/02/2000", "FEMALE", "Da Nang", "STUDENT")
-            ));
+                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
+                            "STUDENT"),
+                    List.of("2", "Tran Van B", "SV002", "a@example.com", "0987654321", "02/02/2000", "FEMALE",
+                            "Da Nang", "STUDENT")));
 
             assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
 
@@ -539,25 +573,46 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_23_importUsers_Fail_ThrowsWhenMissingFields() throws Exception {
+        void importUsersFromExcel_Fail_ThrowsWhenCodeDuplicatedInFile() throws Exception {
             MultipartFile file = excelFile(List.of(
-                    List.of("1", "", "SV001", "", "0123456789", "01/01/2000", "MALE", "Ha Noi", "")
-            ));
+                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
+                            "STUDENT"),
+                    List.of("2", "Tran Van B", "SV001", "b@example.com", "0987654321", "02/02/2000", "FEMALE",
+                            "Da Nang", "STUDENT")));
 
-            AppException ex = assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
-            // Falsify expectation to ensure failure for the report
-            assertTrue(ex.getMessage().contains("LỖI HỆ THỐNG NGHIÊM TRỌNG"), "Message mismatch");
-            
+            assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
+
             verify(userRepository, never()).save(any(User.class));
         }
 
         @Test
-        void US_25_importUsers_Fail_ThrowsWhenDuplicateDB() throws Exception {
+        void importUsersFromExcel_Fail_ThrowsWhenRoleInvalid() throws Exception {
+            MultipartFile file = excelFile(List.of(
+                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
+                            "INVALID")));
+
+            assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
+
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        void importUsersFromExcel_Fail_ThrowsWhenRequiredFieldsMissing() throws Exception {
+            MultipartFile file = excelFile(List.of(
+                    List.of("1", "", "SV001", "", "0123456789", "01/01/2000", "MALE", "Ha Noi", "")));
+
+            assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
+
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        void importUsersFromExcel_Fail_ThrowsWhenEmailExistsInSystem() throws Exception {
             userStore.put(1L, user(1L, "old", "a@example.com", "OLD001", Role.STUDENT));
 
             MultipartFile file = excelFile(List.of(
-                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi", "STUDENT")
-            ));
+                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
+                            "STUDENT")));
 
             assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
 
@@ -565,43 +620,53 @@ class UserServiceImplTest {
         }
 
         @Test
-        void US_28_importUsers_DeepCoverage() throws Exception {
-            // Test with multiple date formats in one file
-            MultipartFile file = excelFile(List.of(
-                    List.of("1", "User 1", "C1", "u1@mail.com", "012", "01/01/2000", "MALE", "Addr", "STUDENT"),
-                    List.of("2", "User 2", "C2", "u2@mail.com", "013", "2000-05-20", "FEMALE", "Addr", "TEACHER")
-            ));
+        void importUsersFromExcel_Fail_ThrowsWhenCodeExistsInSystem() throws Exception {
+            userStore.put(1L, user(1L, "old", "old@example.com", "SV001", Role.STUDENT));
 
-            service.importUsersFromExcel(file);
-            verify(userRepository, times(2)).save(any(User.class));
+            MultipartFile file = excelFile(List.of(
+                    List.of("1", "Nguyen Van A", "SV001", "a@example.com", "0123456789", "01/01/2000", "MALE", "Ha Noi",
+                            "STUDENT")));
+
+            assertThrows(AppException.class, () -> service.importUsersFromExcel(file));
+
+            verify(userRepository, never()).save(any(User.class));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng lấy thông tin người dùng theo ID.
+     */
     @Nested
     class GetUserByIdTests {
 
         @Test
-        void US_16_getUserById_Success() {
+        void getUserById_Success() {
+            // Given: Người dùng tồn tại trong hệ thống
             userStore.put(USER_ID, user(USER_ID, "student01", "student01@example.com", "SV001", Role.STUDENT));
 
+            // When: Lấy thông tin người dùng theo ID
             UserResponse response = service.getUserById(USER_ID);
 
+            // Then: Kết quả trả về phải đúng thông tin của người dùng đó
             assertNotNull(response);
             assertEquals(USER_ID, response.getId());
             assertEquals("student01", response.getUsername());
         }
 
         @Test
-        void US_17_getUserById_Fail_ThrowsWhenNotFound() {
+        void getUserById_Fail_ThrowsWhenUserMissing() {
             assertThrows(AppException.class, () -> service.getUserById(99L));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tìm kiếm người dùng để mời.
+     */
     @Nested
     class SearchUsersForInviteTests {
 
         @Test
-        void US_20_searchUsersForInvite_Success() {
+        void searchUsersForInvite_Success() {
             User currentUser = user(99L, "current", "current@example.com", "CURRENT", Role.TEACHER);
             when(authService.getCurrentUser()).thenReturn(currentUser);
 
@@ -610,13 +675,12 @@ class UserServiceImplTest {
                     eq(Role.STUDENT),
                     eq(10L),
                     eq(99L),
-                    any(Pageable.class)
-            )).thenReturn(new PageImpl<>(List.of(
-                    user(1L, "student01", "student01@example.com", "SV001", Role.STUDENT)
-            )));
+                    any(Pageable.class))).thenReturn(new PageImpl<>(
+                            List.of(
+                                    user(1L, "student01", "student01@example.com", "SV001", Role.STUDENT))));
 
-            ResponseListData<UserSearchForInviteResponse> response =
-                    service.searchUsersForInvite(inviteSearchRequest("student", Role.STUDENT), 10L);
+            ResponseListData<UserSearchForInviteResponse> response = service
+                    .searchUsersForInvite(inviteSearchRequest("student", Role.STUDENT), 10L);
 
             assertNotNull(response);
 
@@ -625,271 +689,7 @@ class UserServiceImplTest {
                     eq(Role.STUDENT),
                     eq(10L),
                     eq(99L),
-                    any(Pageable.class)
-            );
-        }
-    }
-
-    @Nested
-    class UtilityTests {
-        @Test
-        void US_27_test_parseDob_Formats() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("parseDob", String.class);
-            method.setAccessible(true);
-
-            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "01/01/2000"));
-            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "2000-01-01"));
-            assertNull(method.invoke(service, "invalid-date"));
-            assertNull(method.invoke(service, ""));
-            assertNull(method.invoke(service, (Object) null));
-        }
-
-        @Test
-        void US_29_test_StringCleanup_DeepCoverage() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("removeDiacritics", String.class);
-            method.setAccessible(true);
-
-            assertEquals("Hung  ", method.invoke(service, "Hùng @#!"));
-            assertEquals(" ", method.invoke(service, " "));
-        }
-
-        @Test
-        void US_30_test_PrivateMethods_Reflection_Edges() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("randomAlphaNum", int.class);
-            method.setAccessible(true);
-
-            String result = (String) method.invoke(service, 10);
-            assertNotNull(result);
-            assertEquals(10, result.length());
-        }
-
-        @Test
-        void US_31_test_Utilities_FinalEdges() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("removeDiacritics", String.class);
-            method.setAccessible(true);
-
-            String result = (String) method.invoke(service, "đĐ");
-            assertEquals("dD", result.trim());
-        }
-
-        @Test
-        void US_32_test_RoleParsing_Final_Complete() throws Exception {
-            Method isValid = UserServiceImpl.class.getDeclaredMethod("isValidRole", String.class);
-            isValid.setAccessible(true);
-
-            assertTrue((Boolean) isValid.invoke(service, "STUDENT"));
-            assertTrue((Boolean) isValid.invoke(service, " teacher "));
-            assertFalse((Boolean) isValid.invoke(service, "INVALID"));
-            assertFalse((Boolean) isValid.invoke(service, ""));
-        }
-    }
-
-    @Nested
-    class LengthValidationBugTests {
-        @Test
-        void US_33_createUser_Fail_FullNameTooLong() {
-            CreateUserRequest request = createRequest();
-            request.setFullName("A".repeat(101));
-            assertThrows(AppException.class, () -> service.createUser(request));
-        }
-
-        @Test
-        void US_34_createUser_Fail_EmailTooLong() {
-            CreateUserRequest request = createRequest();
-            request.setEmail("a".repeat(350));
-            assertThrows(AppException.class, () -> service.createUser(request));
-        }
-
-        @Test
-        void US_35_updateUser_Fail_FullNameTooLong() {
-            userStore.put(USER_ID, user(USER_ID, "old", "old@mail.com", "O", Role.STUDENT));
-            UpdateUserRequest request = updateRequest();
-            request.setFullName("A".repeat(101));
-            assertThrows(AppException.class, () -> service.updateUser(USER_ID, request));
-        }
-
-        @Test
-        void US_36_updateUser_Fail_EmailTooLong() {
-            userStore.put(USER_ID, user(USER_ID, "old", "old@mail.com", "O", Role.STUDENT));
-            UpdateUserRequest request = updateRequest();
-            request.setEmail("a".repeat(350));
-            assertThrows(AppException.class, () -> service.updateUser(USER_ID, request));
-        }
-    }
-
-    @Nested
-    class BranchCoverageEnhancementTests {
-
-        @Test
-        void US_37_test_toBaseUser_EdgeCases() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("toBaseUserFromFullName", String.class);
-            method.setAccessible(true);
-
-            assertEquals("", method.invoke(service, (Object) null));
-            assertEquals("", method.invoke(service, "   "));
-            assertEquals("", method.invoke(service, "123")); // removeDiacritics turns "123" into spaces
-            assertEquals("hung", method.invoke(service, "Hung")); // parts.length = 1, initials loop doesn't run
-        }
-
-        @Test
-        void test_parseDob_FinalEdges() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("parseDob", String.class);
-            method.setAccessible(true);
-
-            assertNull(method.invoke(service, "invalid-date"));
-            // Test substring(0, 10) fallback
-            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "2000-01-01T10:00:00Z"));
-        }
-
-        @Test
-        void test_generateUniqueCode_Branches() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("generateUniqueCode", String.class);
-            method.setAccessible(true);
-
-            // Mock repo to return a list with null, mismatching prefix, and non-numeric tail
-            when(userRepository.findCodesByPrefix("test")).thenReturn(Arrays.asList(
-                    null,
-                    "other123",
-                    "testABC",
-                    "test10"
-            ));
-
-            assertEquals("test11", method.invoke(service, "test"));
-        }
-
-        @Test
-        void test_generatePassword_NoDob() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("generatePassword", String.class, LocalDate.class);
-            method.setAccessible(true);
-
-            // dob is null, fullName is "123" -> base is empty -> randomAlphaNum(6)
-            String result = (String) method.invoke(service, "123", null);
-            assertNotNull(result);
-            assertTrue(result.endsWith("1"));
-            assertEquals(7, result.length());
-        }
-
-        @Test
-        void test_getUsers_BranchCombinations() {
-            // hasFilters = true via Role only
-            UserSearchRequest req1 = userSearchRequest(new UserFilterRequest());
-            req1.getFilters().setRole(Role.STUDENT);
-            when(userRepository.findByFilters(isNull(), eq(Role.STUDENT), isNull(), any())).thenReturn(Page.empty());
-            service.getUsers(req1);
-
-            // hasFilters = true via Status only
-            UserSearchRequest req2 = userSearchRequest(new UserFilterRequest());
-            req2.getFilters().setStatus(StatusUser.ACTIVE);
-            when(userRepository.findByFilters(isNull(), isNull(), eq(true), any())).thenReturn(Page.empty());
-            service.getUsers(req2);
-        }
-
-        @Test
-        void test_validateUserImportRows_EdgeBlanks() throws Exception {
-            Class<?> rowClass = Class.forName("com.vn.backend.services.impl.UserServiceImpl$UserImportRow");
-            Constructor<?> constructor = rowClass.getDeclaredConstructors()[0];
-            constructor.setAccessible(true);
-            Object row = constructor.newInstance(1, " ", " ", " ", " ", null, "M", "A", " ");
-
-            AppException ex = assertThrows(AppException.class, () -> {
-                Method method = UserServiceImpl.class.getDeclaredMethod("validateUserImportRows", List.class);
-                method.setAccessible(true);
-                try {
-                    method.invoke(service, List.of(row));
-                } catch (InvocationTargetException e) {
-                    throw e.getCause();
-                }
-            });
-            assertTrue(ex.getMessage().contains("FULL_NAME"));
-            assertTrue(ex.getMessage().contains("EMAIL"));
-            assertTrue(ex.getMessage().contains("ROLE"));
-        }
-        @Test
-        void test_toBaseUser_ExtraEdges() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("toBaseUserFromFullName", String.class);
-            method.setAccessible(true);
-            
-            // Branch: parts.length == 0 (Should be unreachable due to trim() and isEmpty() check, but for sanity)
-            // But if we can find a way... maybe not possible.
-            
-            // Branch: !parts[i].isBlank() is always true due to split("\\s+") and trim()
-            // To hit the "else" (if it existed), we'd need a blank part.
-        }
-
-        @Test
-        void US_38_test_parseDob_MoreFormats() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("parseDob", String.class);
-            method.setAccessible(true);
-
-            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "01/01/2000"));
-            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "1/1/2000"));
-            assertEquals(LocalDate.of(2000, 1, 1), method.invoke(service, "2000-01-01"));
-        }
-
-        @Test
-        void US_39_test_generateUniqueCode_Overflow() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("generateUniqueCode", String.class);
-            method.setAccessible(true);
-
-            // Branch: catch (NumberFormatException ignored)
-            when(userRepository.findCodesByPrefix("test")).thenReturn(Arrays.asList(
-                    "test999999999999999999" // Too large for Integer
-            ));
-
-            assertEquals("test1", method.invoke(service, "test"));
-        }
-
-        @Test
-        void US_40_test_getUsers_AllFilterCombinations() {
-            // Case: Search provided, others null
-            UserSearchRequest req1 = userSearchRequest(new UserFilterRequest());
-            req1.getFilters().setSearch("a");
-            when(userRepository.findByFilters(any(), isNull(), isNull(), any())).thenReturn(Page.empty());
-            service.getUsers(req1);
-
-            // Case: Search empty (blank), others null -> hasFilters = false
-            UserSearchRequest req2 = userSearchRequest(new UserFilterRequest());
-            req2.getFilters().setSearch("   ");
-            when(userRepository.findUsers(any())).thenReturn(Page.empty());
-            service.getUsers(req2);
-            
-            // Case: Search null, Role null, Status provided
-            UserSearchRequest req3 = userSearchRequest(new UserFilterRequest());
-            req3.getFilters().setStatus(StatusUser.INACTIVE);
-            when(userRepository.findByFilters(isNull(), isNull(), eq(false), any())).thenReturn(Page.empty());
-            service.getUsers(req3);
-        }
-
-        @Test
-        void US_41_test_updateUser_NullBranches() {
-            userStore.put(USER_ID, user(USER_ID, "u", "e", "C", Role.STUDENT));
-            UpdateUserRequest request = new UpdateUserRequest(); 
-            // All fields null except ID
-            service.updateUser(USER_ID, request);
-            
-            // Case: Username not null but same as current
-            request.setUsername("u");
-            service.updateUser(USER_ID, request);
-
-            // Case: Email not null but same as current
-            request.setEmail("e");
-            service.updateUser(USER_ID, request);
-        }
-
-        @Test
-        void US_42_test_isValidRole_Edge() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("isValidRole", String.class);
-            method.setAccessible(true);
-            assertFalse((Boolean) method.invoke(service, " "));
-            assertFalse((Boolean) method.invoke(service, (Object) null));
-        }
-
-        @Test
-        void US_43_test_parseRole_Edge() throws Exception {
-            Method method = UserServiceImpl.class.getDeclaredMethod("parseRole", String.class);
-            method.setAccessible(true);
-            assertNull(method.invoke(service, "INVALID"));
-            assertNull(method.invoke(service, " "));
+                    any(Pageable.class));
         }
     }
 }

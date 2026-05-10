@@ -35,6 +35,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Lớp kiểm thử cho InvitationServiceImpl, quản lý các unit test cho chức năng
+ * lời mời tham gia lớp học.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class InvitationServiceImplTest {
@@ -69,6 +73,9 @@ class InvitationServiceImplTest {
     private final List<ClassMember> savedClassMembers = new ArrayList<>();
     private final AtomicLong invitationIds = new AtomicLong(1);
 
+    /**
+     * Thiết lập môi trường trước mỗi bài kiểm thử.
+     */
     @BeforeEach
     void setUp() {
         MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
@@ -80,8 +87,7 @@ class InvitationServiceImplTest {
                 classroomRepository,
                 userRepository,
                 authService,
-                notificationService
-        );
+                notificationService);
 
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(invocation -> {
             Invitation invitation = invocation.getArgument(0);
@@ -178,8 +184,9 @@ class InvitationServiceImplTest {
                 CLASSROOM_ID,
                 userId,
                 ClassMemberRole.ASSISTANT,
-                ClassMemberStatus.ACTIVE
-        )).thenReturn(isAssistant ? Optional.of(member(userId, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE)) : Optional.empty());
+                ClassMemberStatus.ACTIVE)).thenReturn(
+                        isAssistant ? Optional.of(member(userId, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE))
+                                : Optional.empty());
     }
 
     private void mockUserExists(Long userId, Role role) {
@@ -196,46 +203,40 @@ class InvitationServiceImplTest {
         when(classMemberRepository.existsByClassroomIdAndUserIdAndMemberStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassMemberStatus.ACTIVE
-        )).thenReturn(false);
+                ClassMemberStatus.ACTIVE)).thenReturn(false);
     }
 
     private void mockExistingActiveMember(Long userId) {
         when(classMemberRepository.existsByClassroomIdAndUserIdAndMemberStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassMemberStatus.ACTIVE
-        )).thenReturn(true);
+                ClassMemberStatus.ACTIVE)).thenReturn(true);
     }
 
     private void mockNoPendingOrAcceptedInvitation(Long userId) {
         when(invitationRepository.existsByClassroomIdAndUserIdAndInvitationStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassroomInvitationStatus.PENDING
-        )).thenReturn(false);
+                ClassroomInvitationStatus.PENDING)).thenReturn(false);
 
         when(invitationRepository.existsByClassroomIdAndUserIdAndInvitationStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassroomInvitationStatus.ACCEPTED
-        )).thenReturn(false);
+                ClassroomInvitationStatus.ACCEPTED)).thenReturn(false);
     }
 
     private void mockPendingInvitationExists(Long userId) {
         when(invitationRepository.existsByClassroomIdAndUserIdAndInvitationStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassroomInvitationStatus.PENDING
-        )).thenReturn(true);
+                ClassroomInvitationStatus.PENDING)).thenReturn(true);
     }
 
     private void mockAcceptedInvitationExists(Long userId) {
         when(invitationRepository.existsByClassroomIdAndUserIdAndInvitationStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassroomInvitationStatus.ACCEPTED
-        )).thenReturn(true);
+                ClassroomInvitationStatus.ACCEPTED)).thenReturn(true);
     }
 
     private void mockJoinClassroomByCode(ClassCodeStatus status) {
@@ -252,8 +253,7 @@ class InvitationServiceImplTest {
         when(classMemberRepository.existsByClassroomIdAndUserIdAndMemberStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassMemberStatus.INACTIVE
-        )).thenReturn(false);
+                ClassMemberStatus.INACTIVE)).thenReturn(false);
     }
 
     private ClassMember mockInactiveMember(Long userId) {
@@ -262,14 +262,12 @@ class InvitationServiceImplTest {
         when(classMemberRepository.existsByClassroomIdAndUserIdAndMemberStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassMemberStatus.INACTIVE
-        )).thenReturn(true);
+                ClassMemberStatus.INACTIVE)).thenReturn(true);
 
         when(classMemberRepository.findByClassroomIdAndUserIdAndMemberStatus(
                 CLASSROOM_ID,
                 userId,
-                ClassMemberStatus.INACTIVE
-        )).thenReturn(inactiveMember);
+                ClassMemberStatus.INACTIVE)).thenReturn(inactiveMember);
 
         return inactiveMember;
     }
@@ -278,15 +276,19 @@ class InvitationServiceImplTest {
         when(classMemberRepository.findByClassroomIdAndMemberRoleAndMemberStatus(
                 CLASSROOM_ID,
                 ClassMemberRole.ASSISTANT,
-                ClassMemberStatus.ACTIVE
-        )).thenReturn(assistants);
+                ClassMemberStatus.ACTIVE)).thenReturn(assistants);
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng gửi lời mời hàng loạt.
+     */
     @Nested
     class SendBulkInvitationTests {
 
         @Test
         void sendBulkInvitation_Success_TeacherInvitesStudents() {
+            // Given: Người gửi là Giáo viên, lớp học tồn tại, sinh viên được mời cũng tồn
+            // tại và chưa tham gia lớp
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdExists();
             mockTeacherPermission(TEACHER_ID, true);
@@ -296,8 +298,10 @@ class InvitationServiceImplTest {
             mockNoExistingActiveMember(STUDENT_ID);
             mockNoPendingOrAcceptedInvitation(STUDENT_ID);
 
+            // When: Giáo viên gửi lời mời hàng loạt cho danh sách sinh viên
             service.sendBulkInvitation(sendBulkRequest(List.of(STUDENT_ID), ClassMemberRole.STUDENT));
 
+            // Then: Lời mời phải được lưu lại với trạng thái PENDING
             assertEquals(1, savedInvitations.size());
 
             Invitation invitation = savedInvitations.get(0);
@@ -308,17 +312,18 @@ class InvitationServiceImplTest {
             assertEquals(TEACHER_ID, invitation.getInvitedBy());
             assertEquals(ClassroomInvitationStatus.PENDING, invitation.getInvitationStatus());
 
+            // Đảm bảo thông báo mời tham gia lớp học được gửi tới sinh viên
             verify(notificationService).createNotificationForUser(
                     any(User.class),
                     eq(STUDENT_ID),
                     eq(NotificationObjectType.INVITE_CLASS),
                     eq(invitation.getInvitationId()),
-                    eq(invitation)
-            );
+                    eq(invitation));
         }
 
         @Test
         void sendBulkInvitation_Success_AssistantInvitesStudent() {
+            // Given: Người gửi là Trợ giảng, lớp học tồn tại và trợ giảng có quyền mời
             mockCurrentUser(ASSISTANT_ID, Role.STUDENT);
             mockClassroomFindByIdExists();
             mockTeacherPermission(ASSISTANT_ID, false);
@@ -328,8 +333,10 @@ class InvitationServiceImplTest {
             mockNoExistingActiveMember(STUDENT_ID);
             mockNoPendingOrAcceptedInvitation(STUDENT_ID);
 
+            // When: Trợ giảng gửi lời mời cho sinh viên
             service.sendBulkInvitation(sendBulkRequest(List.of(STUDENT_ID), ClassMemberRole.STUDENT));
 
+            // Then: Lời mời được lưu thành công với người mời là trợ giảng
             assertEquals(1, savedInvitations.size());
             assertEquals(ASSISTANT_ID, savedInvitations.get(0).getInvitedBy());
         }
@@ -339,9 +346,8 @@ class InvitationServiceImplTest {
             mockCurrentUser(TEACHER_ID, Role.TEACHER);
             mockClassroomFindByIdMissing();
 
-            assertThrows(AppException.class, () ->
-                    service.sendBulkInvitation(sendBulkRequest(List.of(STUDENT_ID), ClassMemberRole.STUDENT))
-            );
+            assertThrows(AppException.class,
+                    () -> service.sendBulkInvitation(sendBulkRequest(List.of(STUDENT_ID), ClassMemberRole.STUDENT)));
 
             verify(invitationRepository, never()).save(any(Invitation.class));
         }
@@ -355,9 +361,8 @@ class InvitationServiceImplTest {
 
             mockUserExists(20L, Role.STUDENT);
 
-            assertThrows(AppException.class, () ->
-                    service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.STUDENT))
-            );
+            assertThrows(AppException.class,
+                    () -> service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.STUDENT)));
 
             verify(invitationRepository, never()).save(any(Invitation.class));
         }
@@ -371,9 +376,8 @@ class InvitationServiceImplTest {
 
             mockUserExists(20L, Role.TEACHER);
 
-            assertThrows(AppException.class, () ->
-                    service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.ASSISTANT))
-            );
+            assertThrows(AppException.class,
+                    () -> service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.ASSISTANT)));
 
             verify(invitationRepository, never()).save(any(Invitation.class));
         }
@@ -385,9 +389,8 @@ class InvitationServiceImplTest {
 
             mockUserExists(20L, Role.TEACHER);
 
-            assertThrows(AppException.class, () ->
-                    service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.STUDENT))
-            );
+            assertThrows(AppException.class,
+                    () -> service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.STUDENT)));
 
             verify(invitationRepository, never()).save(any(Invitation.class));
         }
@@ -399,9 +402,8 @@ class InvitationServiceImplTest {
 
             mockUserExists(20L, Role.STUDENT);
 
-            assertThrows(AppException.class, () ->
-                    service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.ASSISTANT))
-            );
+            assertThrows(AppException.class,
+                    () -> service.sendBulkInvitation(sendBulkRequest(List.of(20L), ClassMemberRole.ASSISTANT)));
 
             verify(invitationRepository, never()).save(any(Invitation.class));
         }
@@ -423,8 +425,7 @@ class InvitationServiceImplTest {
                     anyLong(),
                     any(NotificationObjectType.class),
                     anyLong(),
-                    any(Invitation.class)
-            );
+                    any(Invitation.class));
         }
 
         @Test
@@ -475,6 +476,9 @@ class InvitationServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tham gia lớp học bằng mã code.
+     */
     @Nested
     class JoinClassroomByCodeTests {
 
@@ -505,20 +509,19 @@ class InvitationServiceImplTest {
                     eq(TEACHER_ID),
                     eq(NotificationObjectType.JOIN_CLASS),
                     eq(CLASSROOM_ID),
-                    any(Classroom.class)
-            );
+                    any(Classroom.class));
 
             verify(notificationService).createNotificationForUser(
                     any(User.class),
                     eq(ASSISTANT_ID),
                     eq(NotificationObjectType.JOIN_CLASS),
                     eq(CLASSROOM_ID),
-                    any(Classroom.class)
-            );
+                    any(Classroom.class));
         }
 
         @Test
         void joinClassroomByCode_Success_ReactivatesInactiveMember() {
+            // Given: Sinh viên đã từng tham gia lớp nhưng hiện tại ở trạng thái INACTIVE
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomByCode(ClassCodeStatus.ACTIVE);
             mockNoExistingActiveMember(STUDENT_ID);
@@ -527,8 +530,10 @@ class InvitationServiceImplTest {
             ClassMember inactiveMember = mockInactiveMember(STUDENT_ID);
             mockAssistantsInClassroom(List.of());
 
+            // When: Sinh viên nhập mã code để tham gia lại lớp học
             service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE));
 
+            // Then: Trạng thái thành viên phải được cập nhật lại thành ACTIVE
             assertEquals(ClassMemberStatus.ACTIVE, inactiveMember.getMemberStatus());
             assertEquals(ClassMemberRole.STUDENT, inactiveMember.getMemberRole());
             assertNotNull(inactiveMember.getJoinedAt());
@@ -541,9 +546,7 @@ class InvitationServiceImplTest {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomCodeMissing();
 
-            assertThrows(AppException.class, () ->
-                    service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE))
-            );
+            assertThrows(AppException.class, () -> service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE)));
 
             verify(classMemberRepository, never()).save(any(ClassMember.class));
         }
@@ -553,9 +556,7 @@ class InvitationServiceImplTest {
             mockCurrentUser(STUDENT_ID, Role.STUDENT);
             mockJoinClassroomByCode(ClassCodeStatus.DISABLED);
 
-            assertThrows(AppException.class, () ->
-                    service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE))
-            );
+            assertThrows(AppException.class, () -> service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE)));
 
             verify(classMemberRepository, never()).save(any(ClassMember.class));
         }
@@ -566,9 +567,7 @@ class InvitationServiceImplTest {
             mockJoinClassroomByCode(ClassCodeStatus.ACTIVE);
             mockExistingActiveMember(STUDENT_ID);
 
-            assertThrows(AppException.class, () ->
-                    service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE))
-            );
+            assertThrows(AppException.class, () -> service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE)));
 
             verify(classMemberRepository, never()).save(any(ClassMember.class));
         }
@@ -580,9 +579,7 @@ class InvitationServiceImplTest {
             mockNoExistingActiveMember(STUDENT_ID);
             mockPendingInvitationExists(STUDENT_ID);
 
-            assertThrows(AppException.class, () ->
-                    service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE))
-            );
+            assertThrows(AppException.class, () -> service.joinClassroomByCode(joinByCodeRequest(CLASS_CODE)));
 
             verify(classMemberRepository, never()).save(any(ClassMember.class));
         }

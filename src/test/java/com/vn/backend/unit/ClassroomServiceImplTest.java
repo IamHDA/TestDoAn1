@@ -40,17 +40,28 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+/**
+ * Lớp kiểm thử cho ClassroomServiceImpl, quản lý các unit test cho chức năng
+ * lớp học.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ClassroomServiceImplTest {
 
-    @Mock private AuthService authService;
-    @Mock private ClassroomRepository classroomRepository;
-    @Mock private ClassroomSettingRepository classroomSettingRepository;
-    @Mock private ClassMemberRepository classMemberRepository;
-    @Mock private SubjectRepository subjectRepository;
-    @Mock private ClassScheduleRepository classScheduleRepository;
-    @Mock private ApprovalRequestService approvalRequestService;
+    @Mock
+    private AuthService authService;
+    @Mock
+    private ClassroomRepository classroomRepository;
+    @Mock
+    private ClassroomSettingRepository classroomSettingRepository;
+    @Mock
+    private ClassMemberRepository classMemberRepository;
+    @Mock
+    private SubjectRepository subjectRepository;
+    @Mock
+    private ClassScheduleRepository classScheduleRepository;
+    @Mock
+    private ApprovalRequestService approvalRequestService;
 
     private final AtomicLong classroomIds = new AtomicLong(1);
 
@@ -60,6 +71,9 @@ class ClassroomServiceImplTest {
     private List<ClassSchedule> savedSchedules;
     private ClassMember savedClassMember;
 
+    /**
+     * Thiết lập môi trường trước mỗi bài kiểm thử.
+     */
     @BeforeEach
     void setUp() {
         MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
@@ -72,8 +86,7 @@ class ClassroomServiceImplTest {
                 classMemberRepository,
                 subjectRepository,
                 classScheduleRepository,
-                approvalRequestService
-        );
+                approvalRequestService);
 
         when(classroomRepository.save(any(Classroom.class))).thenAnswer(invocation -> {
             savedClassroom = invocation.getArgument(0);
@@ -191,16 +204,22 @@ class ClassroomServiceImplTest {
         return request;
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng lấy thông tin lớp học.
+     */
     @Nested
     class GetClassroomInformationTests {
 
         @Test
         void getDetailClassroom_Success() {
+            // Given: Lớp học ID 4 đang ở trạng thái ACTIVE
             when(classroomRepository.findByClassroomIdAndClassroomStatusAndIsActiveTrue(4L, ClassroomStatus.ACTIVE))
                     .thenReturn(Optional.of(classroom(4L, 4L)));
 
+            // When: Lấy thông tin chi tiết của lớp học
             ClassroomDetailResponse result = service.getDetailClassroom("4");
 
+            // Then: Kết quả trả về phải chứa thông tin chính xác của lớp học đó
             assertNotNull(result);
             assertEquals(4L, result.getClassroomId());
         }
@@ -233,11 +252,15 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tìm kiếm lớp học.
+     */
     @Nested
     class SearchClassroomTests {
 
         @Test
         void searchClassroom_Success() {
+            // Given: Danh sách lớp học giả lập kết quả tìm kiếm
             Subject subject1 = new Subject();
             subject1.setSubjectId(1L);
             subject1.setSubjectName("Java Programming");
@@ -268,8 +291,7 @@ class ClassroomServiceImplTest {
                             .fullName("Tran Thi B")
                             .memberCount(42L)
                             .assignmentCount(8L)
-                            .build()
-            );
+                            .build());
 
             mockCurrentUser(4L);
 
@@ -285,19 +307,22 @@ class ClassroomServiceImplTest {
             when(filters.toDTO()).thenReturn(requestDTO);
             when(request.getPagination()).thenReturn(pagination);
 
+            // Giả lập kết quả trả về từ repository
             when(classroomRepository.searchClassroom(any(ClassroomSearchRequestDTO.class), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(
                             classrooms,
                             pagination.getPagingMeta().toPageable(),
-                            classrooms.size()
-                    ));
+                            classrooms.size()));
 
+            // When: Thực hiện tìm kiếm lớp học
             ResponseListData<ClassroomSearchResponse> result = service.searchClassroom(request);
 
+            // Then: Kiểm tra dữ liệu tìm kiếm trả về đúng và đầy đủ
             assertNotNull(result);
             assertNotNull(result.getContent());
             assertEquals(classrooms.size(), result.getContent().stream().count());
             assertEquals(classrooms.get(0).getClassroomId(), result.getContent().iterator().next().getClassroomId());
+            // Đảm bảo thông tin người dùng thực hiện tìm kiếm được đính kèm vào yêu cầu
             assertEquals(4L, requestDTO.getUserId());
             assertEquals(ClassMemberStatus.ACTIVE, requestDTO.getClassMemberStatus());
 
@@ -305,36 +330,45 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tạo lớp học.
+     */
     @Nested
     class CreateClassroomTests {
 
         @Test
         void createClassroom_Success() {
+            // Given: Người dùng có ID 4, môn học tồn tại (ID 2), mã lớp học chưa bị trùng
             mockCurrentUser(4L);
             when(subjectRepository.existsBySubjectIdAndIsDeletedIsFalse(2L)).thenReturn(true);
             when(classroomRepository.existsByClassCode(any())).thenReturn(false);
 
+            // When: Thực hiện tạo lớp học mới
             service.createClassroom(createRequest());
 
+            // Then: Kiểm tra lớp học được lưu với thông tin chính xác (Giáo viên, Trạng
+            // thái)
             assertNotNull(savedClassroom);
             assertEquals(4L, savedClassroom.getTeacherId());
             assertEquals(ClassroomStatus.ACTIVE, savedClassroom.getClassroomStatus());
             assertEquals(ClassCodeStatus.ACTIVE, savedClassroom.getClassCodeStatus());
 
+            // Kiểm tra cấu hình lớp học (Setting) được khởi tạo mặc định
             assertNotNull(savedSetting);
             assertEquals(1L, savedSetting.getClassroomId());
             assertTrue(savedSetting.getAllowStudentPost());
 
+            // Kiểm tra lịch học (Schedule) được lưu đúng
             assertNotNull(savedSchedules);
             assertEquals(1, savedSchedules.size());
             assertEquals(1L, savedSchedules.get(0).getClassroomId());
 
+            // Đảm bảo có yêu cầu phê duyệt được tạo ra
             verify(approvalRequestService).createRequest(
                     eq(RequestType.CLASS_CREATE),
                     eq("Need approval"),
                     eq(4L),
-                    eq(List.of(1L))
-            );
+                    eq(List.of(1L)));
         }
 
         @Test
@@ -381,30 +415,37 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng cập nhật lớp học.
+     */
     @Nested
     class UpdateClassroomTests {
 
         @Test
         void updateClassroom_Success() {
+            // Given: Người dùng (Giáo viên ID 4) đang sửa lớp học ID 9 của chính mình
             mockCurrentUser(4L);
 
             Classroom classroom = classroom(9L, 4L);
             classroom.setClassName("Old");
             classroom.setDescription("Old desc");
             classroom.setCoverImageUrl("old.png");
+            // Lớp học hiện tại đang có lịch học tại phòng A1
             classroom.setSchedules(new ArrayList<>(List.of(
                     ClassSchedule.builder()
                             .scheduleId(1L)
                             .classroomId(9L)
                             .room("A1")
-                            .build()
-            )));
+                            .build())));
 
             when(classroomRepository.findByClassroomIdAndTeacherIdAndIsActiveTrue(9L, 4L))
                     .thenReturn(Optional.of(classroom));
 
+            // When: Thực hiện cập nhật thông tin lớp học (Tên mới, Phòng mới B2, Trạng thái
+            // mã lớp DISABLED)
             service.updateClassroom("9", updateRequest());
 
+            // Then: Kiểm tra các thông tin cơ bản đã được cập nhật
             assertNotNull(savedClassroom);
             assertEquals("New", savedClassroom.getClassName());
             assertEquals("New desc", savedClassroom.getDescription());
@@ -412,6 +453,7 @@ class ClassroomServiceImplTest {
             assertEquals(ClassroomStatus.ACTIVE, savedClassroom.getClassroomStatus());
             assertEquals(ClassCodeStatus.DISABLED, savedClassroom.getClassCodeStatus());
 
+            // Kiểm tra lịch học đã được thay đổi sang phòng B2
             assertEquals(1, savedClassroom.getSchedules().size());
             assertEquals(3L, savedClassroom.getSchedules().get(0).getScheduleId());
             assertEquals(9L, savedClassroom.getSchedules().get(0).getClassroomId());
@@ -463,6 +505,9 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng reset mã lớp.
+     */
     @Nested
     class ResetClassCodeTests {
 
@@ -498,6 +543,9 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng lấy cấu hình lớp học.
+     */
     @Nested
     class GetClassroomSettingTests {
 
@@ -521,6 +569,9 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng cập nhật cấu hình lớp học.
+     */
     @Nested
     class UpdateClassroomSettingTests {
 
@@ -548,7 +599,8 @@ class ClassroomServiceImplTest {
             when(classroomSettingRepository.findByClassroomIdAndTeacherId(9L, 4L))
                     .thenReturn(Optional.empty());
 
-            assertThrows(AppException.class, () -> service.updateClassroomSetting("9", new ClassroomSettingUpdateRequest()));
+            assertThrows(AppException.class,
+                    () -> service.updateClassroomSetting("9", new ClassroomSettingUpdateRequest()));
         }
 
         @Test
@@ -557,18 +609,24 @@ class ClassroomServiceImplTest {
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng cập nhật trạng thái thành viên lớp.
+     */
     @Nested
     class UpdateClassMemberStatusTests {
 
         @Test
         void updateClassMemberStatus_Success() {
+            // Given: Giáo viên đăng nhập và có một thành viên lớp đang ở trạng thái INACTIVE
             mockCurrentUser(4L);
 
             when(classMemberRepository.findById(9L))
                     .thenReturn(Optional.of(classMember(9L, 4L, ClassMemberStatus.INACTIVE)));
 
+            // When: Cập nhật trạng thái thành viên sang ACTIVE
             service.updateClassMemberStatus("9", memberStatusRequest("ACTIVE"));
 
+            // Then: Trạng thái của thành viên đó phải được lưu là ACTIVE
             assertNotNull(savedClassMember);
             assertEquals(ClassMemberStatus.ACTIVE, savedClassMember.getMemberStatus());
         }
@@ -579,9 +637,7 @@ class ClassroomServiceImplTest {
 
             when(classMemberRepository.findById(9L)).thenReturn(Optional.empty());
 
-            assertThrows(AppException.class, () ->
-                    service.updateClassMemberStatus("9", memberStatusRequest("ACTIVE"))
-            );
+            assertThrows(AppException.class, () -> service.updateClassMemberStatus("9", memberStatusRequest("ACTIVE")));
 
             verify(classMemberRepository, never()).save(any(ClassMember.class));
         }
@@ -593,9 +649,7 @@ class ClassroomServiceImplTest {
             when(classMemberRepository.findById(9L))
                     .thenReturn(Optional.of(classMember(9L, 99L, ClassMemberStatus.INACTIVE)));
 
-            assertThrows(AppException.class, () ->
-                    service.updateClassMemberStatus("9", memberStatusRequest("ACTIVE"))
-            );
+            assertThrows(AppException.class, () -> service.updateClassMemberStatus("9", memberStatusRequest("ACTIVE")));
 
             verify(classMemberRepository, never()).save(any(ClassMember.class));
         }
