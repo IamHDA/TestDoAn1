@@ -92,8 +92,8 @@ class AuthServiceImplTest {
     // ===================== getCurrentUser =====================
 
     @Test
-    @DisplayName("getCurrentUser - thành công khi đã xác thực")
-    void getCurrentUser_Success() {
+    @DisplayName("AU_01 - getCurrentUser - thành công khi đã xác thực")
+    void AU_01_getCurrentUser_Success() {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn("testuser");
@@ -108,8 +108,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("getCurrentUser - ném exception khi chưa xác thực (authentication null)")
-    void getCurrentUser_ThrowsException_WhenAuthenticationIsNull() {
+    @DisplayName("AU_02 - getCurrentUser - ném exception khi chưa xác thực (authentication null)")
+    void AU_02_getCurrentUser_Fail_ThrowsWhenAuthIsNull() {
         when(securityContext.getAuthentication()).thenReturn(null);
         when(messageUtils.getMessage(AppConst.MessageConst.UNAUTHORIZED)).thenReturn("Unauthorized");
 
@@ -122,8 +122,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("getCurrentUser - ném exception khi authentication không authenticated")
-    void getCurrentUser_ThrowsException_WhenNotAuthenticated() {
+    @DisplayName("AU_03 - getCurrentUser - ném exception khi authentication không authenticated")
+    void AU_03_getCurrentUser_Fail_ThrowsWhenNotAuth() {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(false);
         when(messageUtils.getMessage(AppConst.MessageConst.UNAUTHORIZED)).thenReturn("Unauthorized");
@@ -137,8 +137,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("getCurrentUser - ném exception khi user không tồn tại trong DB")
-    void getCurrentUser_ThrowsException_WhenUserNotFoundInDB() {
+    @DisplayName("AU_04 - getCurrentUser - ném exception khi user không tồn tại trong DB")
+    void AU_04_getCurrentUser_Fail_ThrowsWhenNotFound() {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn("nonexistent");
@@ -157,8 +157,8 @@ class AuthServiceImplTest {
     // ===================== login =====================
 
     @Test
-    @DisplayName("login - thành công với thông tin hợp lệ")
-    void login_Success() {
+    @DisplayName("AU_05 - login - thành công với thông tin hợp lệ")
+    void AU_05_login_Success() {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("testuser");
         loginRequest.setPassword("password");
@@ -182,8 +182,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("login - ném exception khi user không tìm thấy sau khi xác thực")
-    void login_ThrowsException_WhenUserNotFoundAfterAuthentication() {
+    @DisplayName("AU_06 - login - ném exception khi user không tìm thấy sau khi xác thực")
+    void AU_06_login_Fail_ThrowsWhenNotFoundAfterAuth() {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("testuser");
         loginRequest.setPassword("password");
@@ -209,8 +209,8 @@ class AuthServiceImplTest {
     // ===================== getCurrentUserInfo =====================
 
     @Test
-    @DisplayName("getCurrentUserInfo - thành công khi user hợp lệ")
-    void getCurrentUserInfo_Success() {
+    @DisplayName("AU_07 - getCurrentUserInfo - thành công khi user hợp lệ")
+    void AU_07_getCurrentUserInfo_Success() {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn("testuser");
@@ -226,8 +226,8 @@ class AuthServiceImplTest {
     // ===================== logout =====================
 
     @Test
-    @DisplayName("logout - thành công, revoke tất cả token và clear context")
-    void logout_Success() {
+    @DisplayName("AU_08 - logout - thành công, revoke tất cả token và clear context")
+    void AU_08_logout_Success() {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn("testuser");
@@ -242,8 +242,8 @@ class AuthServiceImplTest {
     // ===================== refreshToken =====================
 
     @Test
-    @DisplayName("refreshToken - thành công với refresh token hợp lệ")
-    void refreshToken_Success() {
+    @DisplayName("AU_09 - refreshToken - thành công với refresh token hợp lệ")
+    void AU_09_refreshToken_Success() {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("valid-refresh-token");
 
@@ -272,8 +272,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("refreshToken - ném exception khi refresh token không hợp lệ")
-    void refreshToken_ThrowsException_WhenTokenInvalid() {
+    @DisplayName("AU_10 - refreshToken - ném exception khi refresh token không hợp lệ")
+    void AU_10_refreshToken_Fail_ThrowsWhenInvalid() {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("invalid-token");
 
@@ -290,8 +290,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("refreshToken - ném exception khi không tìm thấy refresh token trong DB")
-    void refreshToken_ThrowsException_WhenTokenNotFoundInDB() {
+    @DisplayName("AU_11 - refreshToken - ném exception khi không tìm thấy refresh token trong DB")
+    void AU_11_refreshToken_Fail_ThrowsWhenNotFound() {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("valid-but-not-found-token");
 
@@ -310,8 +310,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("refreshToken - ném exception khi refresh token đã hết hạn")
-    void refreshToken_ThrowsException_WhenTokenExpired() {
+    @DisplayName("AU_12 - refreshToken - ném exception khi refresh token đã hết hạn")
+    void AU_12_refreshToken_Fail_ThrowsWhenExpired() {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("expired-refresh-token");
 
