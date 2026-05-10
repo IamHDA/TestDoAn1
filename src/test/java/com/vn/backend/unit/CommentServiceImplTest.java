@@ -1,5 +1,8 @@
 package com.vn.backend.unit;
 
+
+import org.junit.jupiter.api.DisplayName;
+
 import com.vn.backend.dto.request.comment.CommentCreateRequest;
 import com.vn.backend.dto.request.comment.CommentDeleteRequest;
 import com.vn.backend.dto.request.comment.CommentListRequest;
@@ -39,6 +42,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Lớp kiểm thử cho CommentServiceImpl, quản lý các unit test cho chức năng bình
+ * luận.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class CommentServiceImplTest {
@@ -49,17 +56,25 @@ class CommentServiceImplTest {
     private static final Long ANNOUNCEMENT_ID = 10L;
     private static final Long CLASSROOM_ID = 20L;
 
-    @Mock private CommentRepository commentRepository;
-    @Mock private AnnouncementRepository announcementRepository;
-    @Mock private ClassMemberRepository classMemberRepository;
-    @Mock private ClassroomRepository classroomRepository;
-    @Mock private AuthService authService;
+    @Mock
+    private CommentRepository commentRepository;
+    @Mock
+    private AnnouncementRepository announcementRepository;
+    @Mock
+    private ClassMemberRepository classMemberRepository;
+    @Mock
+    private ClassroomRepository classroomRepository;
+    @Mock
+    private AuthService authService;
 
     private CommentServiceImpl service;
 
     private final Map<Long, Comment> commentStore = new HashMap<>();
     private final AtomicLong commentIds = new AtomicLong(1);
 
+    /**
+     * Thiết lập môi trường trước mỗi bài kiểm thử.
+     */
     @BeforeEach
     void setUp() {
         MessageUtils messageUtils = ServiceTestSupport.mockMessageUtils();
@@ -70,8 +85,7 @@ class CommentServiceImplTest {
                 classMemberRepository,
                 classroomRepository,
                 authService,
-                messageUtils
-        );
+                messageUtils);
 
         mockCommentRepositoryStorage();
     }
@@ -238,20 +252,27 @@ class CommentServiceImplTest {
         verify(commentRepository).softDeleteById(commentId);
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng tạo bình luận.
+     */
     @Nested
     class CreateCommentTests {
 
         @Test
+        @DisplayName("LH_BL_01 - Đảm bảo tạo bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void createComment_Success_WhenUserIsActiveMember() {
+            // Given: Người dùng đã đăng nhập, thông báo cho phép bình luận và người dùng là
+            // thành viên lớp đang hoạt động
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
             mockActiveMemberAccess(USER_ID);
 
+            // When: Người dùng thực hiện gửi bình luận với nội dung "Hello class"
             CommentResponse response = service.createComment(
                     ANNOUNCEMENT_ID,
-                    createRequest("Hello class")
-            );
+                    createRequest("Hello class"));
 
+            // Then: Kiểm tra phản hồi trả về có đầy đủ thông tin và quyền chỉnh sửa/xóa
             assertNotNull(response);
             assertEquals(ANNOUNCEMENT_ID, response.getAnnouncementId());
             assertEquals(USER_ID, response.getUserId());
@@ -259,6 +280,7 @@ class CommentServiceImplTest {
             assertTrue(response.getCanEdit());
             assertTrue(response.getCanDelete());
 
+            // Đảm bảo bình luận đã được lưu vào repository với thông tin chính xác
             Comment saved = commentStore.values().stream().findFirst().orElseThrow();
             assertEquals("Hello class", saved.getContent());
             assertEquals(USER_ID, saved.getUserId());
@@ -266,79 +288,82 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_02 - Đảm bảo tạo bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void createComment_Success_WhenUserIsTeacher() {
+            // Given: Người dùng là giáo viên của lớp học
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
             mockTeacherAccess(USER_ID, true);
 
+            // When: Giáo viên gửi bình luận
             CommentResponse response = service.createComment(
                     ANNOUNCEMENT_ID,
-                    createRequest("Teacher comment")
-            );
+                    createRequest("Teacher comment"));
 
+            // Then: Bình luận được lưu thành công
             assertNotNull(response);
             assertEquals(USER_ID, response.getUserId());
             assertEquals("Teacher comment", response.getContent());
         }
 
         @Test
+        @DisplayName("LH_BL_03 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void createComment_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(USER_ID);
             mockAnnouncementMissing();
 
-            assertThrows(AppException.class, () ->
-                    service.createComment(ANNOUNCEMENT_ID, createRequest("Hello"))
-            );
+            assertThrows(AppException.class, () -> service.createComment(ANNOUNCEMENT_ID, createRequest("Hello")));
 
             assertCommentNotSaved();
         }
 
         @Test
+        @DisplayName("LH_BL_04 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when user is not class member.")
         void createComment_Fail_ThrowsWhenUserIsNotClassMember() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
             mockTeacherAccess(USER_ID, false);
             mockNoMemberAccess(USER_ID);
 
-            assertThrows(AppException.class, () ->
-                    service.createComment(ANNOUNCEMENT_ID, createRequest("Hello"))
-            );
+            assertThrows(AppException.class, () -> service.createComment(ANNOUNCEMENT_ID, createRequest("Hello")));
 
             assertCommentNotSaved();
         }
 
         @Test
+        @DisplayName("LH_BL_05 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when member is not active.")
         void createComment_Fail_ThrowsWhenMemberIsNotActive() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
             mockTeacherAccess(USER_ID, false);
             mockMemberAccess(USER_ID, ClassMemberRole.STUDENT, ClassMemberStatus.INACTIVE);
 
-            assertThrows(AppException.class, () ->
-                    service.createComment(ANNOUNCEMENT_ID, createRequest("Hello"))
-            );
+            assertThrows(AppException.class, () -> service.createComment(ANNOUNCEMENT_ID, createRequest("Hello")));
 
             assertCommentNotSaved();
         }
 
         @Test
+        @DisplayName("LH_BL_06 - Đảm bảo tạo bình luận xử lý đúng trường hợp lỗi: fail_throws when announcement disables comments.")
         void createComment_Fail_ThrowsWhenAnnouncementDisablesComments() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(false);
             mockTeacherAccess(USER_ID, true);
 
-            assertThrows(AppException.class, () ->
-                    service.createComment(ANNOUNCEMENT_ID, createRequest("Blocked"))
-            );
+            assertThrows(AppException.class, () -> service.createComment(ANNOUNCEMENT_ID, createRequest("Blocked")));
 
             assertCommentNotSaved();
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng lấy danh sách bình luận.
+     */
     @Nested
     class GetCommentListTests {
 
         @Test
+        @DisplayName("LH_BL_07 - Đảm bảo xem danh sách bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void getCommentList_Success_ReturnsCommentsForActiveMember() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -349,8 +374,7 @@ class CommentServiceImplTest {
 
             when(commentRepository.findByAnnouncementIdAndNotDeleted(
                     eq(ANNOUNCEMENT_ID),
-                    any(Pageable.class)
-            )).thenReturn(new PageImpl<>(List.of(first, second)));
+                    any(Pageable.class))).thenReturn(new PageImpl<>(List.of(first, second)));
 
             ResponseListData<CommentResponse> result = service.getCommentList(listRequest());
 
@@ -363,11 +387,11 @@ class CommentServiceImplTest {
 
             verify(commentRepository).findByAnnouncementIdAndNotDeleted(
                     eq(ANNOUNCEMENT_ID),
-                    any(Pageable.class)
-            );
+                    any(Pageable.class));
         }
 
         @Test
+        @DisplayName("LH_BL_08 - Đảm bảo xem danh sách bình luận xử lý đúng trường hợp lỗi: fail_throws when announcement missing.")
         void getCommentList_Fail_ThrowsWhenAnnouncementMissing() {
             mockCurrentUser(USER_ID);
             mockAnnouncementMissing();
@@ -376,11 +400,11 @@ class CommentServiceImplTest {
 
             verify(commentRepository, never()).findByAnnouncementIdAndNotDeleted(
                     anyLong(),
-                    any(Pageable.class)
-            );
+                    any(Pageable.class));
         }
 
         @Test
+        @DisplayName("LH_BL_09 - Đảm bảo xem danh sách bình luận xử lý đúng trường hợp lỗi: fail_throws when user has no classroom access.")
         void getCommentList_Fail_ThrowsWhenUserHasNoClassroomAccess() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -391,15 +415,18 @@ class CommentServiceImplTest {
 
             verify(commentRepository, never()).findByAnnouncementIdAndNotDeleted(
                     anyLong(),
-                    any(Pageable.class)
-            );
+                    any(Pageable.class));
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng cập nhật bình luận.
+     */
     @Nested
     class UpdateCommentTests {
 
         @Test
+        @DisplayName("LH_BL_10 - Đảm bảo cập nhật bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void updateComment_Success_UpdatesOwnComment() {
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
@@ -417,60 +444,65 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_11 - Đảm bảo cập nhật bình luận xử lý đúng trường hợp lỗi: fail_throws when comment missing.")
         void updateComment_Fail_ThrowsWhenCommentMissing() {
             mockCurrentUser(USER_ID);
 
-            assertThrows(AppException.class, () ->
-                    service.updateComment(updateRequest(99L, "Updated"))
-            );
+            assertThrows(AppException.class, () -> service.updateComment(updateRequest(99L, "Updated")));
 
             assertCommentNotSaved();
         }
 
         @Test
+        @DisplayName("LH_BL_12 - Đảm bảo cập nhật bình luận xử lý đúng trường hợp lỗi: fail_throws when other user tries to edit.")
         void updateComment_Fail_ThrowsWhenOtherUserTriesToEdit() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
             mockActiveMemberAccess(OTHER_USER_ID);
             saveExistingComment(5L, COMMENT_OWNER_ID, "Old");
 
-            assertThrows(AppException.class, () ->
-                    service.updateComment(updateRequest(5L, "Hack"))
-            );
+            assertThrows(AppException.class, () -> service.updateComment(updateRequest(5L, "Hack")));
 
             assertEquals("Old", commentStore.get(5L).getContent());
         }
 
         @Test
+        @DisplayName("LH_BL_13 - Đảm bảo cập nhật bình luận xử lý đúng trường hợp lỗi: fail_throws when teacher tries to edit student comment.")
         void updateComment_Fail_ThrowsWhenTeacherTriesToEditStudentComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
             mockTeacherAccess(OTHER_USER_ID, true);
             saveExistingComment(5L, COMMENT_OWNER_ID, "Old");
 
-            assertThrows(AppException.class, () ->
-                    service.updateComment(updateRequest(5L, "Teacher edit"))
-            );
+            assertThrows(AppException.class, () -> service.updateComment(updateRequest(5L, "Teacher edit")));
 
             assertEquals("Old", commentStore.get(5L).getContent());
         }
     }
 
+    /**
+     * Các bài kiểm thử cho chức năng xóa bình luận.
+     */
     @Nested
     class DeleteCommentTests {
 
         @Test
+        @DisplayName("LH_BL_14 - Đảm bảo xóa bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteComment_Success_SoftDeletesOwnComment() {
+            // Given: Người dùng đã đăng nhập và có 1 bình luận ID 6
             mockCurrentUser(USER_ID);
             mockAnnouncement(true);
             saveExistingComment(6L, USER_ID, "Delete");
 
+            // When: Thực hiện xóa chính bình luận của mình
             service.deleteComment(deleteRequest(6L));
 
+            // Then: Bình luận phải được đánh dấu xóa (soft delete)
             assertSoftDeleted(6L);
         }
 
         @Test
+        @DisplayName("LH_BL_15 - Đảm bảo xóa bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteComment_Success_TeacherDeletesStudentComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -483,6 +515,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_16 - Đảm bảo xóa bình luận hoạt động đúng với dữ liệu mock hợp lệ và trả/lưu kết quả theo kỳ vọng.")
         void deleteComment_Success_AssistantDeletesStudentComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -496,6 +529,7 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_17 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when comment missing.")
         void deleteComment_Fail_ThrowsWhenCommentMissing() {
             mockCurrentUser(USER_ID);
 
@@ -505,21 +539,21 @@ class CommentServiceImplTest {
         }
 
         @Test
+        @DisplayName("LH_BL_18 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when current user cannot delete others comment.")
         void deleteComment_Fail_ThrowsWhenCurrentUserCannotDeleteOthersComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
             mockActiveMemberAccess(OTHER_USER_ID);
             saveExistingComment(9L, COMMENT_OWNER_ID, "Other user");
 
-            assertThrows(AppException.class, () ->
-                    service.deleteComment(deleteRequest(9L))
-            );
+            assertThrows(AppException.class, () -> service.deleteComment(deleteRequest(9L)));
 
             assertFalse(commentStore.get(9L).getIsDeleted());
             assertCommentNotDeleted(9L);
         }
 
         @Test
+        @DisplayName("LH_BL_19 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when assistant deletes teacher comment.")
         void deleteComment_Fail_ThrowsWhenAssistantDeletesTeacherComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -528,15 +562,14 @@ class CommentServiceImplTest {
             mockMemberAccess(COMMENT_OWNER_ID, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE);
             saveExistingComment(9L, COMMENT_OWNER_ID, "Teacher comment");
 
-            assertThrows(AppException.class, () ->
-                    service.deleteComment(deleteRequest(9L))
-            );
+            assertThrows(AppException.class, () -> service.deleteComment(deleteRequest(9L)));
 
             assertFalse(commentStore.get(9L).getIsDeleted());
             assertCommentNotDeleted(9L);
         }
 
         @Test
+        @DisplayName("LH_BL_20 - Đảm bảo xóa bình luận xử lý đúng trường hợp lỗi: fail_throws when assistant deletes assistant comment.")
         void deleteComment_Fail_ThrowsWhenAssistantDeletesAssistantComment() {
             mockCurrentUser(OTHER_USER_ID);
             mockAnnouncement(true);
@@ -545,9 +578,7 @@ class CommentServiceImplTest {
             mockMemberAccess(COMMENT_OWNER_ID, ClassMemberRole.ASSISTANT, ClassMemberStatus.ACTIVE);
             saveExistingComment(9L, COMMENT_OWNER_ID, "Assistant comment");
 
-            assertThrows(AppException.class, () ->
-                    service.deleteComment(deleteRequest(9L))
-            );
+            assertThrows(AppException.class, () -> service.deleteComment(deleteRequest(9L)));
 
             assertFalse(commentStore.get(9L).getIsDeleted());
             assertCommentNotDeleted(9L);

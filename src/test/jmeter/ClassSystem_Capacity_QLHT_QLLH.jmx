@@ -1,0 +1,416 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Class System Capacity Test - QLHT &amp; QLLH Critical Workflows" enabled="true">
+      <stringProp name="TestPlan.comments">Capacity/stress test focused on high-impact write workflows. Login is setup only; main measurements are create classroom, announcement/comment, invitation, settings, and admin user creation.</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true"><collectionProp name="Arguments.arguments"/></elementProp>
+    </TestPlan>
+    <hashTree>
+      <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="Environment Variables" enabled="true"><collectionProp name="Arguments.arguments"><elementProp name="BASE_PROTOCOL" elementType="Argument"><stringProp name="Argument.name">BASE_PROTOCOL</stringProp><stringProp name="Argument.value">http</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp><elementProp name="BASE_HOST" elementType="Argument"><stringProp name="Argument.name">BASE_HOST</stringProp><stringProp name="Argument.value">localhost</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp><elementProp name="BASE_PORT" elementType="Argument"><stringProp name="Argument.name">BASE_PORT</stringProp><stringProp name="Argument.value">8080</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp><elementProp name="API_PREFIX" elementType="Argument"><stringProp name="Argument.name">API_PREFIX</stringProp><stringProp name="Argument.value">/api</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp></collectionProp></Arguments><hashTree/>
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true"><collectionProp name="Arguments.arguments"/></elementProp>
+      <stringProp name="HTTPSampler.domain">${BASE_HOST}</stringProp>
+      <stringProp name="HTTPSampler.port">${BASE_PORT}</stringProp>
+      <stringProp name="HTTPSampler.protocol">${BASE_PROTOCOL}</stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path"></stringProp>
+      <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </ConfigTestElement><hashTree/>
+      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true"><collectionProp name="HeaderManager.headers"><elementProp name="" elementType="Header"><stringProp name="Header.name">Content-Type</stringProp><stringProp name="Header.value">application/json</stringProp></elementProp><elementProp name="" elementType="Header"><stringProp name="Header.name">Accept</stringProp><stringProp name="Header.value">application/json</stringProp></elementProp><elementProp name="" elementType="Header"><stringProp name="Header.name">Authorization</stringProp><stringProp name="Header.value">${__groovy(vars.get('token') != null &amp;&amp; vars.get('token').trim().length() &gt; 0 ? 'Bearer ' + vars.get('token').trim() : '')}</stringProp></elementProp></collectionProp></HeaderManager><hashTree/>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="TG1 - QLLH Teacher Critical Write Load" enabled="true">
+      <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+      <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+        <boolProp name="LoopController.continue_forever">true</boolProp>
+        <stringProp name="LoopController.loops">-1</stringProp>
+      </elementProp>
+      <stringProp name="ThreadGroup.num_threads">${__P(qllh_teacher_threads,20)}</stringProp>
+      <stringProp name="ThreadGroup.ramp_time">${__P(qllh_teacher_ramp,60)}</stringProp>
+      <boolProp name="ThreadGroup.scheduler">true</boolProp>
+      <stringProp name="ThreadGroup.duration">${__P(duration,600)}</stringProp>
+      <stringProp name="ThreadGroup.delay">0</stringProp>
+      <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+    </ThreadGroup><hashTree><CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV teachers" enabled="true">
+      <stringProp name="delimiter">,</stringProp>
+      <stringProp name="fileEncoding">UTF-8</stringProp>
+      <stringProp name="filename">jmeter-teachers.csv</stringProp>
+      <boolProp name="ignoreFirstLine">true</boolProp>
+      <boolProp name="quotedData">false</boolProp>
+      <boolProp name="recycle">true</boolProp>
+      <stringProp name="shareMode">shareMode.all</stringProp>
+      <boolProp name="stopThread">false</boolProp>
+      <stringProp name="variableNames">username,password,subjectId,classroomId,announcementId,inviteUserId,classCode</stringProp>
+    </CSVDataSet><hashTree/><OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Once per virtual user: Login only for setup" enabled="true"/><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="SETUP - Login and extract JWT token" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments"><collectionProp name="Arguments.arguments"><elementProp name="" elementType="HTTPArgument"><boolProp name="HTTPArgument.always_encode">false</boolProp><stringProp name="Argument.value">{"username":"${username}","password":"${password}"}</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp></collectionProp></elementProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/auth/login</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp><boolProp name="HTTPSampler.auto_redirects">false</boolProp><boolProp name="HTTPSampler.use_keepalive">true</boolProp><boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/><JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Extract token" enabled="true">
+      <stringProp name="JSONPostProcessor.referenceNames">token</stringProp>
+      <stringProp name="JSONPostProcessor.jsonPathExprs">$.data.token</stringProp>
+      <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+      <stringProp name="JSONPostProcessor.defaultValues"></stringProp>
+    </JSONPostProcessor><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 300-1200ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">300</stringProp>
+      <stringProp name="RandomTimer.range">900</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLLH-01 Create classroom request - DB write + schedule + setting + approval request" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /classrooms/create" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{
+  "className": "LOAD Classroom ${__threadNum}-${__time(/1000,)}-${__counter(FALSE,)}",
+  "subjectId": "${subjectId}",
+  "description": "Capacity test classroom created by JMeter",
+  "coverImageUrl": "https://cdn.example.com/cover.png",
+  "startDate": "2026-01-01",
+  "endDate": "2026-05-01",
+  "courseOutlineUrl": "https://cdn.example.com/outline.pdf",
+  "classSchedules": [{
+    "dayOfWeek": "MONDAY",
+    "startTime": "08:00:00",
+    "endTime": "10:00:00",
+    "room": "LOAD-${__threadNum}"
+  }],
+  "requestDescription": "JMeter capacity test create classroom"
+}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/classrooms/create</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 300-1200ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">300</stringProp>
+      <stringProp name="RandomTimer.range">900</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLLH-02 Update classroom setting - permission + setting write" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="PUT /classrooms/setting/update" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{"allowStudentPost": true, "notifyEmail": false}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/classrooms/setting/${classroomId}/update</stringProp>
+      <stringProp name="HTTPSampler.method">PUT</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 300-1200ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">300</stringProp>
+      <stringProp name="RandomTimer.range">900</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLLH-03 Create announcement with attachment - announcement + attachment + notification" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /announcements/create" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{
+  "title": "LOAD Announcement ${__threadNum}-${__time(/1000,)}-${__counter(FALSE,)}",
+  "content": "Announcement content generated during capacity testing. This endpoint writes announcement, attachment and notification data.",
+  "type": "GENERIC",
+  "allowComments": true,
+  "attachments": [{
+    "fileName": "load-test-${__threadNum}.pdf",
+    "fileUrl": "https://cdn.example.com/load-test-${__threadNum}.pdf",
+    "description": "JMeter synthetic attachment metadata"
+  }]
+}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/announcements/create/${classroomId}</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 300-1200ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">300</stringProp>
+      <stringProp name="RandomTimer.range">900</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLLH-04 Send bulk invitation - permission + duplicate checks + notification" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /invitations/send" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{"classroomId": ${classroomId}, "userIds": [${inviteUserId}], "classMemberRole": "STUDENT"}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/invitations/send</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree></hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="TG2 - QLLH Student Collaboration Load" enabled="true">
+      <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+      <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+        <boolProp name="LoopController.continue_forever">true</boolProp>
+        <stringProp name="LoopController.loops">-1</stringProp>
+      </elementProp>
+      <stringProp name="ThreadGroup.num_threads">${__P(qllh_student_threads,20)}</stringProp>
+      <stringProp name="ThreadGroup.ramp_time">${__P(qllh_student_ramp,60)}</stringProp>
+      <boolProp name="ThreadGroup.scheduler">true</boolProp>
+      <stringProp name="ThreadGroup.duration">${__P(duration,600)}</stringProp>
+      <stringProp name="ThreadGroup.delay">0</stringProp>
+      <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+    </ThreadGroup><hashTree><CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV students" enabled="true">
+      <stringProp name="delimiter">,</stringProp>
+      <stringProp name="fileEncoding">UTF-8</stringProp>
+      <stringProp name="filename">jmeter-students.csv</stringProp>
+      <boolProp name="ignoreFirstLine">true</boolProp>
+      <boolProp name="quotedData">false</boolProp>
+      <boolProp name="recycle">true</boolProp>
+      <stringProp name="shareMode">shareMode.all</stringProp>
+      <boolProp name="stopThread">false</boolProp>
+      <stringProp name="variableNames">username,password,subjectId,classroomId,announcementId,inviteUserId,classCode</stringProp>
+    </CSVDataSet><hashTree/><OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Once per virtual user: Login only for setup" enabled="true"/><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="SETUP - Login and extract JWT token" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments"><collectionProp name="Arguments.arguments"><elementProp name="" elementType="HTTPArgument"><boolProp name="HTTPArgument.always_encode">false</boolProp><stringProp name="Argument.value">{"username":"${username}","password":"${password}"}</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp></collectionProp></elementProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/auth/login</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp><boolProp name="HTTPSampler.auto_redirects">false</boolProp><boolProp name="HTTPSampler.use_keepalive">true</boolProp><boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/><JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Extract token" enabled="true">
+      <stringProp name="JSONPostProcessor.referenceNames">token</stringProp>
+      <stringProp name="JSONPostProcessor.jsonPathExprs">$.data.token</stringProp>
+      <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+      <stringProp name="JSONPostProcessor.defaultValues"></stringProp>
+    </JSONPostProcessor><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 200-800ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">200</stringProp>
+      <stringProp name="RandomTimer.range">600</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLLH-05 Create comment - permission check + comment write" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /comments/create" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{"content": "LOAD comment ${__threadNum}-${__time(/1000,)}-${__counter(FALSE,)}"}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/comments/create/${announcementId}</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 500-1500ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">500</stringProp>
+      <stringProp name="RandomTimer.range">1000</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLLH-06 Join classroom by code - one-shot membership write" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /invitations/join-by-code" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{"classCode": "${classCode}"}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/invitations/join-by-code</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree></hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="TG3 - QLHT Admin Critical Write Load" enabled="true">
+      <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+      <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+        <boolProp name="LoopController.continue_forever">true</boolProp>
+        <stringProp name="LoopController.loops">-1</stringProp>
+      </elementProp>
+      <stringProp name="ThreadGroup.num_threads">${__P(qlht_admin_threads,20)}</stringProp>
+      <stringProp name="ThreadGroup.ramp_time">${__P(qlht_admin_ramp,60)}</stringProp>
+      <boolProp name="ThreadGroup.scheduler">true</boolProp>
+      <stringProp name="ThreadGroup.duration">${__P(duration,600)}</stringProp>
+      <stringProp name="ThreadGroup.delay">0</stringProp>
+      <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+    </ThreadGroup><hashTree><CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV admins" enabled="true">
+      <stringProp name="delimiter">,</stringProp>
+      <stringProp name="fileEncoding">UTF-8</stringProp>
+      <stringProp name="filename">jmeter-admins.csv</stringProp>
+      <boolProp name="ignoreFirstLine">true</boolProp>
+      <boolProp name="quotedData">false</boolProp>
+      <boolProp name="recycle">true</boolProp>
+      <stringProp name="shareMode">shareMode.all</stringProp>
+      <boolProp name="stopThread">false</boolProp>
+      <stringProp name="variableNames">username,password,subjectId,classroomId,announcementId,inviteUserId,classCode</stringProp>
+    </CSVDataSet><hashTree/><OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Once per virtual user: Login only for setup" enabled="true"/><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="SETUP - Login and extract JWT token" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments"><collectionProp name="Arguments.arguments"><elementProp name="" elementType="HTTPArgument"><boolProp name="HTTPArgument.always_encode">false</boolProp><stringProp name="Argument.value">{"username":"${username}","password":"${password}"}</stringProp><stringProp name="Argument.metadata">=</stringProp></elementProp></collectionProp></elementProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/auth/login</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp><boolProp name="HTTPSampler.auto_redirects">false</boolProp><boolProp name="HTTPSampler.use_keepalive">true</boolProp><boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/><JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Extract token" enabled="true">
+      <stringProp name="JSONPostProcessor.referenceNames">token</stringProp>
+      <stringProp name="JSONPostProcessor.jsonPathExprs">$.data.token</stringProp>
+      <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+      <stringProp name="JSONPostProcessor.defaultValues"></stringProp>
+    </JSONPostProcessor><hashTree/></hashTree></hashTree><UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time 500-1500ms" enabled="true">
+      <stringProp name="ConstantTimer.delay">500</stringProp>
+      <stringProp name="RandomTimer.range">1000</stringProp>
+    </UniformRandomTimer><hashTree/><TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="QLHT-01 Create user - validation + duplicate checks + password hashing + DB write" enabled="true">
+      <boolProp name="TransactionController.includeTimers">false</boolProp>
+      <boolProp name="TransactionController.parent">true</boolProp>
+    </TransactionController><hashTree><HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /users/create" enabled="true">
+      <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+      <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="" elementType="HTTPArgument">
+            <boolProp name="HTTPArgument.always_encode">false</boolProp>
+            <stringProp name="Argument.value">{
+  "username": "load_${__threadNum}_${__time(/1000,)}_${__counter(FALSE,)}",
+  "code": "LOAD${__threadNum}${__time(/1000,)}${__counter(FALSE,)}",
+  "email": "load_${__threadNum}_${__time(/1000,)}_${__counter(FALSE,)}@test.vn",
+  "password": "password123",
+  "fullName": "Load Test User ${__threadNum}",
+  "phone": "0900000000",
+  "dateOfBirth": "2000-01-01",
+  "gender": "MALE",
+  "address": "Ha Noi",
+  "role": "STUDENT"
+}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="HTTPSampler.domain"></stringProp>
+      <stringProp name="HTTPSampler.port"></stringProp>
+      <stringProp name="HTTPSampler.protocol"></stringProp>
+      <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+      <stringProp name="HTTPSampler.path">${API_PREFIX}/users/create</stringProp>
+      <stringProp name="HTTPSampler.method">POST</stringProp>
+      <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+      <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+      <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+      <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+    </HTTPSamplerProxy><hashTree><ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200" enabled="true">
+      <collectionProp name="Asserion.test_strings"><stringProp name="49586">200</stringProp></collectionProp>
+      <stringProp name="Assertion.custom_message"></stringProp>
+      <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+      <boolProp name="Assertion.assume_success">false</boolProp>
+      <intProp name="Assertion.test_type">8</intProp>
+    </ResponseAssertion><hashTree/></hashTree></hashTree></hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

@@ -1,6 +1,5 @@
 package com.vn.backend.unit;
 
-import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.utils.MessageUtils;
 import org.mockito.Mockito;
@@ -27,13 +26,6 @@ final class ServiceTestSupport {
         SearchRequest request = new SearchRequest();
         request.setPageNum(String.valueOf(pageNum));
         request.setPageSize(String.valueOf(pageSize));
-        return request;
-    }
-
-    static <T> BaseFilterSearchRequest<T> filterRequest(T filters, int pageNum, int pageSize) {
-        BaseFilterSearchRequest<T> request = new BaseFilterSearchRequest<>();
-        request.setFilters(filters);
-        request.setPagination(searchRequest(pageNum, pageSize));
         return request;
     }
 }

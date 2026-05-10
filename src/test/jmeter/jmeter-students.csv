@@ -1,0 +1,2 @@
+username,password,subjectId,classroomId,announcementId,inviteUserId,classCode
+student@test.com,123456,2,10,11,8,ABC123
