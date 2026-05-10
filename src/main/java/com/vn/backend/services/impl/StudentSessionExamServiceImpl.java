@@ -100,8 +100,8 @@ public class StudentSessionExamServiceImpl extends BaseService implements Studen
             ? request.getPagination().getPagingMeta().toPageable() : Pageable.unpaged();
 
         // Buộc không truyền sort field vào native query để tránh lỗi ORDER BY không tồn tại
-        int pageIdx = pageable != null ? pageable.getPageNumber() : 0;
-        int pageSize = pageable != null ? pageable.getPageSize() : 20;
+        int pageIdx = pageable.isPaged() ? pageable.getPageNumber() : 0;
+        int pageSize = pageable.isPaged() ? pageable.getPageSize() : 20;
         Pageable nativePageable = PageRequest.of(pageIdx, pageSize, Sort.unsorted());
 
         Page<Object[]> page = classMemberRepository.searchStudentsWithJoinStatus(

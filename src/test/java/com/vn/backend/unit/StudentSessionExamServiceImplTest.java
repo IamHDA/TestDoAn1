@@ -1,5 +1,6 @@
 package com.vn.backend.unit;
 
+import com.vn.backend.constants.AppConst;
 import com.vn.backend.dto.request.common.BaseFilterSearchRequest;
 import com.vn.backend.dto.request.common.SearchRequest;
 import com.vn.backend.dto.request.studentsessionexam.StudentSessionExamAddRequest;
@@ -360,6 +361,9 @@ class StudentSessionExamServiceImplTest {
         when(studentSessionExamRepository.findBySessionExamIdAndStudentIdAndIsDeletedFalse(10L, 2L))
                 .thenReturn(Optional.of(sse));
 
+        when(messageUtils.getMessage(AppConst.MessageConst.CANNOT_REMOVE_STUDENT_EXAM_PARTICIPATED))
+                .thenReturn("CANNOT_REMOVE_STUDENT_EXAM_PARTICIPATED");
+
         assertThatThrownBy(() -> studentSessionExamService.removeStudent(10L, 2L))
                 .isInstanceOf(AppException.class)
                 .hasMessageContaining("CANNOT_REMOVE_STUDENT_EXAM_PARTICIPATED");
@@ -420,6 +424,11 @@ class StudentSessionExamServiceImplTest {
         when(sessionExamRepository.findBySessionExamIdAndCreatedByAndIsDeletedFalse(10L, 1L)).thenReturn(Optional.of(sessionExam));
         when(classMemberRepository.findByClassroomIdAndUserIdAndMemberRoleAndMemberStatus(anyLong(), anyLong(), any(), any())).thenReturn(Optional.of(classMember));
         when(classroomSettingRepository.findByClassroomId(1L)).thenReturn(Optional.empty()); // Nhánh setting null
+        when(studentSessionExamRepository.saveAndFlush(any())).thenAnswer(i -> {
+            StudentSessionExam sse = i.getArgument(0);
+            sse.setStudentSessionExamId(100L);
+            return sse;
+        });
 
         studentSessionExamService.addStudents(request);
         verify(studentSessionExamRepository).saveAndFlush(any());
@@ -441,6 +450,11 @@ class StudentSessionExamServiceImplTest {
         when(sessionExamRepository.findBySessionExamIdAndCreatedByAndIsDeletedFalse(10L, 1L)).thenReturn(Optional.of(sessionExam));
         when(classMemberRepository.findByClassroomIdAndUserIdAndMemberRoleAndMemberStatus(anyLong(), anyLong(), any(), any())).thenReturn(Optional.of(classMember));
         when(classroomSettingRepository.findByClassroomId(1L)).thenReturn(Optional.of(setting));
+        when(studentSessionExamRepository.saveAndFlush(any())).thenAnswer(i -> {
+            StudentSessionExam sse = i.getArgument(0);
+            sse.setStudentSessionExamId(100L);
+            return sse;
+        });
 
         studentSessionExamService.addStudents(request);
         verify(studentSessionExamRepository).saveAndFlush(any());
@@ -463,7 +477,11 @@ class StudentSessionExamServiceImplTest {
         when(sessionExamRepository.findBySessionExamIdAndCreatedByAndIsDeletedFalse(10L, 1L)).thenReturn(Optional.of(sessionExam));
         when(classMemberRepository.findByClassroomIdAndUserIdAndMemberRoleAndMemberStatus(anyLong(), anyLong(), any(), any())).thenReturn(Optional.of(classMember));
         when(classroomSettingRepository.findByClassroomId(1L)).thenReturn(Optional.of(setting));
-
+        when(studentSessionExamRepository.saveAndFlush(any())).thenAnswer(i -> {
+            StudentSessionExam sse = i.getArgument(0);
+            sse.setStudentSessionExamId(100L);
+            return sse;
+        });
         studentSessionExamService.addStudents(request);
         verify(studentSessionExamRepository).saveAndFlush(any());
     }
@@ -484,6 +502,11 @@ class StudentSessionExamServiceImplTest {
         
         // Giả lập setting gây lỗi khi thực thi
         when(classroomSettingRepository.findByClassroomId(1L)).thenThrow(new RuntimeException("DB Error in catch block"));
+        when(studentSessionExamRepository.saveAndFlush(any())).thenAnswer(i -> {
+            StudentSessionExam sse = i.getArgument(0);
+            sse.setStudentSessionExamId(100L);
+            return sse;
+        });
 
         // Vẫn phải thành công vì email nằm trong try-catch và không làm rollback transaction
         var response = studentSessionExamService.addStudents(request);

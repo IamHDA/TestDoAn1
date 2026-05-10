@@ -23,7 +23,7 @@ public class SubmissionSearchRequest {
                 .fullName(SearchUtils.getLikeValue(this.keyword))
                 .submissionStatus(EnumUtils.fromString(SubmissionStatus.class, this.submissionStatus))
                 .gradingStatus(EnumUtils.fromString(GradingStatus.class, this.gradingStatus))
-                .assignmentId(Long.parseLong(this.assignmentId))
+                .assignmentId(this.assignmentId != null && !this.assignmentId.isEmpty() ? Long.parseLong(this.assignmentId) : null)
                 .build();
     }
 }

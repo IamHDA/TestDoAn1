@@ -35,8 +35,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.TestMethodOrder;
+
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FileServiceImpl Unit Tests")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class FileServiceImplTest {
 
     @Mock
@@ -71,7 +75,7 @@ class FileServiceImplTest {
     // ===================== handleUploadFiles =====================
 
     @Test
-    @DisplayName("handleUploadFiles - ném exception khi file trống")
+    @DisplayName("[TC_F_01] handleUploadFiles - ném exception khi file trống")
     void handleUploadFiles_ThrowsException_WhenFileIsEmpty() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
         MultipartFile emptyFile = new MockMultipartFile("file", "test.txt", "text/plain", new byte[0]);
@@ -87,7 +91,7 @@ class FileServiceImplTest {
     }
 
     @Test
-    @DisplayName("handleUploadFiles - ném exception khi đuôi file không hợp lệ")
+    @DisplayName("[TC_F_02] handleUploadFiles - ném exception khi đuôi file không hợp lệ")
     void handleUploadFiles_ThrowsException_WhenInvalidExtension() {
         when(authService.getCurrentUser()).thenReturn(currentUser);
         MultipartFile invalidFile = new MockMultipartFile("file", "test.exe", "application/x-msdownload", "print('hello')".getBytes());
@@ -102,7 +106,7 @@ class FileServiceImplTest {
     }
 
     @Test
-    @DisplayName("handleUploadFiles - thành công với thẻ ảnh")
+    @DisplayName("[TC_F_03] handleUploadFiles - thành công với thẻ ảnh")
     void handleUploadFiles_Success_WithImageFile() throws IOException {
         when(authService.getCurrentUser()).thenReturn(currentUser);
         MockMultipartFile validFile = new MockMultipartFile("file", "test.png", "image/png", "dummy content".getBytes());
@@ -120,7 +124,7 @@ class FileServiceImplTest {
     // ===================== downloadFile =====================
 
     @Test
-    @DisplayName("downloadFile - ném exception khi tên file không tồn tại trong DB")
+    @DisplayName("[TC_F_04] downloadFile - ném exception khi tên file không tồn tại trong DB")
     void downloadFile_ThrowsException_WhenFileNameNotFoundInDB() {
         when(fileStorageRepository.findByFileName("nonexistent.png")).thenReturn(Optional.empty());
         when(messageUtils.getMessage(AppConst.MessageConst.NOT_FOUND)).thenReturn("Not found");
@@ -134,7 +138,7 @@ class FileServiceImplTest {
     }
 
     @Test
-    @DisplayName("downloadFile - ném exception khi file vật lý không tồn tại")
+    @DisplayName("[TC_F_05] downloadFile - ném exception khi file vật lý không tồn tại")
     void downloadFile_ThrowsException_WhenPhysicalFileNotFound() {
         FileStorage storage = FileStorage.builder()
                 .fileName("test.png")
@@ -152,7 +156,7 @@ class FileServiceImplTest {
     }
 
     @Test
-    @DisplayName("downloadFile - thành công khi file vật lý tồn tại")
+    @DisplayName("[TC_F_06] downloadFile - thành công khi file vật lý tồn tại")
     void downloadFile_Success() throws IOException {
         File physicalFile = tempDir.resolve("actual_file.png").toFile();
         Files.write(physicalFile.toPath(), "dummy content".getBytes());

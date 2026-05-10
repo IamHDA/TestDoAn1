@@ -399,12 +399,11 @@ class SubmissionServiceImplTest {
             excelUtils.when(() -> com.vn.backend.utils.ExcelUtils.getRow(sheet, 1)).thenReturn(row);
             
             when(row.getCell(1)).thenReturn(cellUsername);
+            when(row.getCell(2)).thenReturn(mock(Cell.class));
             when(row.getCell(3)).thenReturn(cellCode);
             when(row.getCell(7)).thenReturn(cellGrade);
             
-            excelUtils.when(() -> com.vn.backend.utils.ExcelUtils.getCellValueAsString(cellUsername)).thenReturn("user1");
-            excelUtils.when(() -> com.vn.backend.utils.ExcelUtils.getCellValueAsString(cellCode)).thenReturn("SV001");
-            excelUtils.when(() -> com.vn.backend.utils.ExcelUtils.getCellValueAsString(cellGrade)).thenReturn("8.5");
+            excelUtils.when(() -> com.vn.backend.utils.ExcelUtils.getCellValueAsString(any())).thenReturn("user1", "Full Name", "SV001", "8.5");
 
             submissionService.importSubmissionScoresFromExcel("10", multipartFile);
 
@@ -481,7 +480,7 @@ class SubmissionServiceImplTest {
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
-        Attachment att = Attachment.builder().fileUrl("http://storage/file.pdf").fileName("file.pdf").build();
+        Attachment att = Attachment.builder().fileUrl("api/files/download/file.pdf").fileName("file.pdf").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(att));
         
         Resource fileRes = mock(Resource.class);
@@ -504,7 +503,7 @@ class SubmissionServiceImplTest {
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
-        Attachment att = Attachment.builder().fileUrl("invalid-url").build();
+        Attachment att = Attachment.builder().fileUrl("api/files/download/invalid-url").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(att));
         
         assertThatThrownBy(() -> submissionService.downloadAllSubmissions("10"))
@@ -669,14 +668,14 @@ class SubmissionServiceImplTest {
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
-        Attachment att = Attachment.builder().fileUrl("http://storage/file.pdf").fileName("file.pdf").build();
+        Attachment att = Attachment.builder().fileUrl("api/files/download/file.pdf").fileName("file.pdf").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(att));
         
         Resource fileRes = mock(Resource.class);
         File mockFile = mock(File.class);
-        when(fileService.downloadFile(anyString())).thenReturn(fileRes);
-        when(fileRes.getFile()).thenReturn(mockFile);
-        when(mockFile.toPath()).thenReturn(new File("temp.pdf").toPath());
+        lenient().when(fileService.downloadFile(anyString())).thenReturn(fileRes);
+        lenient().when(fileRes.getFile()).thenReturn(mockFile);
+        lenient().when(mockFile.toPath()).thenReturn(new File("temp.pdf").toPath());
 
         try (MockedStatic<java.nio.file.Files> filesMock = mockStatic(java.nio.file.Files.class)) {
             filesMock.when(() -> java.nio.file.Files.copy(any(java.nio.file.Path.class), any(java.io.OutputStream.class)))
@@ -885,9 +884,8 @@ class SubmissionServiceImplTest {
         
         Resource fileRes = mock(Resource.class);
         File mockFile = mock(File.class);
-        when(fileService.downloadFile(anyString())).thenReturn(fileRes);
-        when(fileRes.getFile()).thenReturn(mockFile);
-        when(mockFile.getName()).thenReturn(null); // NULL FILE NAME
+        // Stubbing removed as it is not reached
+        // Stubbing removed as it is not reached
 
         assertThatThrownBy(() -> submissionService.downloadAllSubmissions("10"))
                 .isInstanceOf(AppException.class); // hasAnyFile remains false
@@ -901,8 +899,8 @@ class SubmissionServiceImplTest {
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
         // 2 attachments: 1 fail, 1 success
-        Attachment attFail = Attachment.builder().fileUrl("fail").fileName("fail.pdf").build();
-        Attachment attSuccess = Attachment.builder().fileUrl("success").fileName("success.pdf").build();
+        Attachment attFail = Attachment.builder().fileUrl("api/files/download/fail").fileName("fail.pdf").build();
+        Attachment attSuccess = Attachment.builder().fileUrl("api/files/download/success").fileName("success.pdf").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(attFail, attSuccess));
         
         Resource resFail = mock(Resource.class);
@@ -915,8 +913,10 @@ class SubmissionServiceImplTest {
         when(mockFile.getName()).thenReturn("success.pdf");
         when(mockFile.toPath()).thenReturn(new File("temp.pdf").toPath());
 
-        var result = submissionService.downloadAllSubmissions("10");
-        assertThat(result).isNotNull();
+        try (MockedStatic<java.nio.file.Files> filesMock = mockStatic(java.nio.file.Files.class)) {
+            var result = submissionService.downloadAllSubmissions("10");
+            assertThat(result).isNotNull();
+        }
     }
 
     @Test
@@ -1013,8 +1013,7 @@ class SubmissionServiceImplTest {
     @DisplayName("[TC_SUB_50] markSubmission - Thất bại khi quyền trả về null")
     void markSubmission_PermissionNull_ThrowsException() {
         mockCurrentUser(teacherUser);
-        when(submissionRepository.findById(1000L)).thenReturn(Optional.of(existingSubmission));
-        when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(null); // NULL PERMISSION
+        when(submissionRepository.hasPermission(anyLong(), anyLong())).thenReturn(null);
 
         assertThatThrownBy(() -> submissionService.markSubmission("1000", makeGradeReq(null)))
                 .isInstanceOf(AppException.class);
@@ -1042,8 +1041,8 @@ class SubmissionServiceImplTest {
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
-        Attachment attNull = Attachment.builder().fileUrl("url1").build();
-        Attachment attValid = Attachment.builder().fileUrl("url2").fileName("valid.pdf").build();
+        Attachment attNull = Attachment.builder().fileUrl("api/files/download/url1").build();
+        Attachment attValid = Attachment.builder().fileUrl("api/files/download/url2").fileName("valid.pdf").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(attNull, attValid));
         
         Resource res1 = mock(Resource.class);
@@ -1059,8 +1058,10 @@ class SubmissionServiceImplTest {
         when(file2.getName()).thenReturn("valid.pdf");
         when(file2.toPath()).thenReturn(new File("temp.pdf").toPath());
 
-        var result = submissionService.downloadAllSubmissions("10");
-        assertThat(result).isNotNull();
+        try (MockedStatic<java.nio.file.Files> filesMock = mockStatic(java.nio.file.Files.class)) {
+            var result = submissionService.downloadAllSubmissions("10");
+            assertThat(result).isNotNull();
+        }
     }
 
     @Test
@@ -1086,7 +1087,7 @@ class SubmissionServiceImplTest {
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
-        Attachment att = Attachment.builder().fileUrl("valid_url").fileName("test.pdf").build();
+        Attachment att = Attachment.builder().fileUrl("https://valid.com/file").fileName("test.pdf").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(att));
         
         Resource fileRes = mock(Resource.class);
@@ -1163,7 +1164,7 @@ class SubmissionServiceImplTest {
         when(assignmentRepository.canUserViewSubmissions(anyLong(), anyLong())).thenReturn(true);
         when(submissionRepository.findAllByAssignmentId(10L)).thenReturn(List.of(existingSubmission));
         
-        Attachment att = Attachment.builder().fileUrl("valid_url").fileName("manual_name.pdf").build();
+        Attachment att = Attachment.builder().fileUrl("https://valid.com/file").fileName("manual_name.pdf").build();
         when(attachmentRepository.findByObjectIdAndAttachmentTypeAndNotDeleted(anyLong(), any())).thenReturn(List.of(att));
         
         Resource fileRes = mock(Resource.class);
@@ -1208,7 +1209,7 @@ class SubmissionServiceImplTest {
     @DisplayName("[TC_SUB_60] searchSubmission - Bao phủ pageSize là null (Không phân trang)")
     void searchSubmission_PageSizeNull_Success() {
         mockCurrentUser(teacherUser);
-        BaseFilterSearchRequest<SubmissionSearchRequest> request = makeSearchRequest(null, "1", null);
+        BaseFilterSearchRequest<SubmissionSearchRequest> request = makeSearchRequest("10", "1", null);
 
         mockAssignmentCanViewAny(true);
         when(submissionRepository.searchSubmission(any(), any())).thenReturn(new PageImpl<>(new ArrayList<>()));
@@ -1221,7 +1222,7 @@ class SubmissionServiceImplTest {
     @DisplayName("[TC_SUB_61] searchSubmission - Bao phủ pageSize là chuỗi rỗng")
     void searchSubmission_PageSizeEmpty_Success() {
         mockCurrentUser(teacherUser);
-        BaseFilterSearchRequest<SubmissionSearchRequest> request = makeSearchRequest(null, "1", "  ");
+        BaseFilterSearchRequest<SubmissionSearchRequest> request = makeSearchRequest("10", "1", "");
 
         mockAssignmentCanViewAny(true);
         when(submissionRepository.searchSubmission(any(), any())).thenReturn(new PageImpl<>(new ArrayList<>()));

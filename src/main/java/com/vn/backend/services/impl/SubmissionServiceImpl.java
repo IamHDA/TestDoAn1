@@ -314,11 +314,12 @@ public class SubmissionServiceImpl extends BaseService implements SubmissionServ
                 if (fileName == null) {
                     continue;
                 }
-                hasAnyFile = true;
-                Resource fileResource = fileService.downloadFile(fileName);
-                File file = null;
                 try {
-                    file = fileResource.getFile();
+                    Resource fileResource = fileService.downloadFile(fileName);
+                    if (fileResource == null) {
+                        continue;
+                    }
+                    File file = fileResource.getFile();
                     String zipEntryName = submission.getStudent().getFullName()
                             + "_" + submission.getStudent().getCode()
                             + "/" + file.getName();
@@ -326,13 +327,10 @@ public class SubmissionServiceImpl extends BaseService implements SubmissionServ
                     zipOut.putNextEntry(new ZipEntry(zipEntryName));
                     Files.copy(file.toPath(), zipOut);
                     zipOut.closeEntry();
-                } catch (IOException e) {
-                    String safeFileName =
-                            (file != null) ? file.getName() : attachment.getFileName();
-                    log.error("Download file {} failed", safeFileName, e);
-                    throw new AppException(MessageConst.FILE_DOWNLOAD_FAILED,
-                            messageUtils.getMessage(MessageConst.FILE_DOWNLOAD_FAILED),
-                            HttpStatus.BAD_REQUEST);
+                    hasAnyFile = true;
+                } catch (Exception e) {
+                    log.error("Download file failed for attachment: {}", attachment.getFileUrl(), e);
+                    // Continue to next attachment instead of failing the whole zip
                 }
             }
         }
